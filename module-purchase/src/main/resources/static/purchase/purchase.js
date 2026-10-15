@@ -30,33 +30,42 @@ async function requestJson(url, options = {}) {
   return body && Object.prototype.hasOwnProperty.call(body, 'data') ? body.data : body;
 }
 
-function setKpis(data) {
-  document.getElementById('kpi-plan').textContent = money(data.totalPlanAmount);
-  document.getElementById('kpi-actual').textContent = money(data.totalActualAmount);
-  document.getElementById('kpi-rate').textContent = pct(data.achievementRate);
-  const variance = Number(data.totalVarianceAmount || 0);
-  const varianceElement = document.getElementById('kpi-variance');
-  varianceElement.textContent = `${variance > 0 ? '+' : ''}${money(variance)}`;
-  varianceElement.classList.toggle('is-positive', variance > 0);
-  varianceElement.classList.toggle('is-negative', variance < 0);
-  const uploadedCount = (data.monthly || []).filter((point) => point.uploaded).length;
-  document.getElementById('kpi-actual-note').textContent = `백만원 · VAT 별도 · ${uploadedCount}/12개월 반영`;
-  document.getElementById('coverage-label').textContent = uploadedCount ? `${uploadedCount}개월 데이터 반영` : '업로드된 자료가 없습니다';
+function renderMonthlySummary(points) {
+  const root = document.getElementById('monthly-summary-body');
+  const uploaded = (points || []).filter((point) => point.uploaded);
+  const totalPlan = uploaded.reduce((sum, point) => sum + Number(point.planAmount || 0), 0);
+  const totalActual = uploaded.reduce((sum, point) => sum + Number(point.actualAmount || 0), 0);
+  const totalRate = totalPlan ? totalActual / totalPlan * 100 : 0;
+  const totalVariance = totalActual - totalPlan;
+  document.getElementById('coverage-label').textContent = uploaded.length ? `${uploaded.length}/12개월 자료` : '자료 없음';
+  root.innerHTML = (points || []).map((point) => {
+    const variance = Number(point.varianceAmount || 0);
+    return `<tr class="monthly-summary-row${point.uploaded ? '' : ' is-unuploaded'}" data-month="${point.month}" ${point.uploaded ? 'tabindex="0" role="button"' : ''}>
+      <td>${point.month}월</td>
+      <td class="number-cell">${point.uploaded ? money(point.planAmount) : '—'}</td>
+      <td class="number-cell">${point.uploaded ? money(point.actualAmount) : '—'}</td>
+      <td class="number-cell">${point.uploaded ? pct(point.achievementRate) : '—'}</td>
+      <td class="number-cell ${variance > 0 ? 'text-positive' : variance < 0 ? 'text-negative' : ''}">${point.uploaded ? `${variance > 0 ? '+' : ''}${money(variance)}` : '—'}</td>
+    </tr>`;
+  }).join('') + `<tr class="annual-total-row"><th>누계</th><th class="number-cell">${money(totalPlan)}</th><th class="number-cell">${money(totalActual)}</th><th class="number-cell">${pct(totalRate)}</th><th class="number-cell ${totalVariance > 0 ? 'text-positive' : totalVariance < 0 ? 'text-negative' : ''}">${totalVariance > 0 ? '+' : ''}${money(totalVariance)}</th></tr>`;
+  root.querySelectorAll('.monthly-summary-row:not(.is-unuploaded)').forEach((row) => {
+    const selectMonth = () => { monthSelect.value = row.dataset.month; activePage = 0; loadDetails(); };
+    row.addEventListener('click', selectMonth);
+    row.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') selectMonth(); });
+  });
 }
 
-function renderMonthly(points) {
-  const root = document.getElementById('monthly-chart');
-  const maxValue = Math.max(1, ...points.flatMap((point) => [Number(point.planAmount || 0), Number(point.actualAmount || 0)]));
-  root.innerHTML = points.map((point) => {
+function renderCompactGraph(points) {
+  const root = document.getElementById('monthly-graph');
+  const maxAmount = Math.max(1, ...(points || []).flatMap((point) => [Number(point.planAmount || 0), Number(point.actualAmount || 0)]));
+  root.innerHTML = (points || []).map((point) => {
     const plan = Number(point.planAmount || 0);
     const actual = Number(point.actualAmount || 0);
-    const planHeight = Math.max(plan > 0 ? 2 : 0, plan / maxValue * 100);
-    const actualHeight = Math.max(actual > 0 ? 2 : 0, actual / maxValue * 100);
-    const classes = `month-column${point.uploaded ? '' : ' is-empty'}`;
-    return `<button class="${classes}" type="button" data-month="${point.month}" ${point.uploaded ? '' : 'disabled'} aria-label="${point.month}월 계획 ${money(plan)}백만원, 실적 ${money(actual)}백만원">
-      <span class="bar-area"><i class="bar plan-bar" style="height:${planHeight}%" title="계획 ${money(plan)}"></i><i class="bar actual-bar" style="height:${actualHeight}%" title="실적 ${money(actual)}"></i></span>
-      <span class="month-label">${String(point.month).padStart(2, '0')}월</span>
-      ${point.uploaded ? `<span class="month-rate">${pct(point.achievementRate)}</span>` : '<span class="month-rate muted">미등록</span>'}
+    const planWidth = point.uploaded ? Math.max(plan > 0 ? 1 : 0, plan / maxAmount * 100) : 0;
+    const actualWidth = point.uploaded ? Math.max(actual > 0 ? 1 : 0, actual / maxAmount * 100) : 0;
+    return `<button class="compact-month-row${point.uploaded ? '' : ' is-unuploaded'}" type="button" data-month="${point.month}" ${point.uploaded ? '' : 'disabled'} aria-label="${point.month}월 계획 ${money(plan)}백만원, 실적 ${money(actual)}백만원">
+      <span class="compact-month-label">${String(point.month).padStart(2, '0')}월</span>
+      <span class="compact-bars"><i class="compact-bar plan-bar" style="width:${planWidth}%" title="계획 ${money(plan)}백만원"></i><i class="compact-bar actual-bar" style="width:${actualWidth}%" title="실적 ${money(actual)}백만원"></i></span>
     </button>`;
   }).join('');
   root.querySelectorAll('[data-month]').forEach((button) => button.addEventListener('click', () => {
@@ -64,33 +73,6 @@ function renderMonthly(points) {
     activePage = 0;
     loadDetails();
   }));
-}
-
-function renderCumulative(points) {
-  const root = document.getElementById('cumulative-chart');
-  const cumulative = [];
-  let planSum = 0;
-  let actualSum = 0;
-  points.forEach((point) => {
-    planSum += Number(point.planAmount || 0);
-    actualSum += Number(point.actualAmount || 0);
-    cumulative.push({ month: point.month, plan: planSum, actual: actualSum });
-  });
-  const maxValue = Math.max(1, ...cumulative.flatMap((point) => [point.plan, point.actual]));
-  const left = 44, right = 700, top = 18, bottom = 184;
-  const x = (index) => left + (right - left) * index / 11;
-  const y = (value) => bottom - (value / maxValue) * (bottom - top);
-  const planPath = cumulative.map((point, index) => `${index ? 'L' : 'M'} ${x(index)} ${y(point.plan)}`).join(' ');
-  const actualPath = cumulative.map((point, index) => `${index ? 'L' : 'M'} ${x(index)} ${y(point.actual)}`).join(' ');
-  const grid = [0, 1, 2, 3].map((tick) => {
-    const yy = top + (bottom - top) * tick / 3;
-    return `<line x1="${left}" x2="${right}" y1="${yy}" y2="${yy}" class="chart-gridline"/><text x="${left - 8}" y="${yy + 4}" text-anchor="end" class="axis-label">${money(maxValue * (1 - tick / 3))}</text>`;
-  }).join('');
-  const labels = cumulative.map((point, index) => `<text x="${x(index)}" y="${bottom + 22}" text-anchor="middle" class="axis-label">${point.month}월</text>`).join('');
-  root.innerHTML = `<svg viewBox="0 0 720 224" role="img" aria-label="누계 계획과 실적 선그래프" preserveAspectRatio="none">
-    ${grid}<path d="${planPath}" class="trend-line plan-trend"/><path d="${actualPath}" class="trend-line actual-trend"/>
-    ${cumulative.map((point, index) => `<circle cx="${x(index)}" cy="${y(point.plan)}" r="2.5" class="trend-point plan-point"><title>${point.month}월 누계 계획 ${money(point.plan)}백만원</title></circle><circle cx="${x(index)}" cy="${y(point.actual)}" r="2.5" class="trend-point actual-point"><title>${point.month}월 누계 실적 ${money(point.actual)}백만원</title></circle>`).join('')}
-    ${labels}</svg>`;
 }
 
 function renderBreakdown(rootId, items, emptyText) {
@@ -131,9 +113,8 @@ async function loadDashboard() {
   try {
     showNotice('', 'info');
     const data = await requestJson(`${apiRoot}/dashboard?year=${encodeURIComponent(year)}`);
-    setKpis(data);
-    renderMonthly(data.monthly || []);
-    renderCumulative(data.monthly || []);
+    renderMonthlySummary(data.monthly || []);
+    renderCompactGraph(data.monthly || []);
     renderBreakdown('business-breakdown', data.businessUnits, '사업부 실적 자료가 없습니다.');
     renderBreakdown('supplier-breakdown', data.topSuppliers, '협력업체 자료가 없습니다.');
     setFilterOptions(data.businessUnits || []);

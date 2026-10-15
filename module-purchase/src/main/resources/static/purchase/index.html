@@ -42,45 +42,27 @@
 
       <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
 
-      <section class="kpi-grid" aria-label="연간 핵심 지표">
-        <article class="kpi-card">
-          <div class="kpi-top"><span>연간 계획</span><span class="kpi-symbol symbol-plan">P</span></div>
-          <strong id="kpi-plan" class="kpi-value">—</strong>
-          <span class="kpi-foot">백만원 · 업로드된 월 기준</span>
-        </article>
-        <article class="kpi-card kpi-primary">
-          <div class="kpi-top"><span>연간 실적</span><span class="kpi-symbol symbol-actual">A</span></div>
-          <strong id="kpi-actual" class="kpi-value">—</strong>
-          <span id="kpi-actual-note" class="kpi-foot">백만원 · VAT 별도</span>
-        </article>
-        <article class="kpi-card">
-          <div class="kpi-top"><span>계획 달성률</span><span class="kpi-symbol symbol-rate">%</span></div>
-          <strong id="kpi-rate" class="kpi-value">—</strong>
-          <span class="kpi-foot">실적 ÷ 계획</span>
-        </article>
-        <article class="kpi-card">
-          <div class="kpi-top"><span>계획 대비 차이</span><span class="kpi-symbol symbol-variance">±</span></div>
-          <strong id="kpi-variance" class="kpi-value">—</strong>
-          <span class="kpi-foot">백만원 · 실적 − 계획</span>
-        </article>
-      </section>
-
-      <section class="chart-grid" aria-label="구매실적 차트">
-        <article class="panel monthly-panel">
+      <section class="overview-grid" aria-label="연간 월별 구매실적">
+        <article class="panel annual-table-panel">
           <div class="panel-heading">
-            <div><p class="panel-kicker">MONTHLY TREND</p><h2>월별 계획 · 실적</h2></div>
+            <div><p class="panel-kicker">ANNUAL PURCHASE REPORT</p><h2>월별 구매실적 요약</h2></div>
+            <span id="coverage-label" class="coverage-badge">자료 없음</span>
+          </div>
+          <div class="table-wrap annual-table-wrap">
+            <table class="annual-table">
+              <thead><tr><th>월</th><th>계획</th><th>실적</th><th>달성률</th><th>계획 대비 차이</th></tr></thead>
+              <tbody id="monthly-summary-body"></tbody>
+            </table>
+          </div>
+          <div class="chart-foot"><span>단위: 백만원 · VAT 별도</span><span>실적 − 계획</span></div>
+        </article>
+        <article class="panel compact-chart-panel">
+          <div class="panel-heading">
+            <div><p class="panel-kicker">MONTHLY COMPARISON</p><h2>월별 금액 비교</h2></div>
             <div class="legend"><span><i class="legend-swatch plan-swatch"></i>계획</span><span><i class="legend-swatch actual-swatch"></i>실적</span></div>
           </div>
-          <div id="monthly-chart" class="monthly-chart" aria-label="월별 계획과 실적 막대그래프"></div>
-          <div class="chart-foot"><span>단위: 백만원</span><span id="coverage-label">자료 없음</span></div>
-        </article>
-        <article class="panel cumulative-panel">
-          <div class="panel-heading">
-            <div><p class="panel-kicker">CUMULATIVE VIEW</p><h2>누계 추이</h2></div>
-            <div class="legend"><span><i class="legend-swatch plan-line-swatch"></i>계획</span><span><i class="legend-swatch actual-line-swatch"></i>실적</span></div>
-          </div>
-          <div id="cumulative-chart" class="cumulative-chart" aria-label="월별 누계 계획과 누계 실적 추이"></div>
-          <div class="chart-foot"><span>단위: 백만원</span><span>업로드 완료 월 누계</span></div>
+          <div id="monthly-graph" class="compact-chart" aria-label="월별 계획과 실적 비교 그래프"></div>
+          <div class="chart-foot"><span>막대 길이: 금액 비례</span><span>단위: 백만원</span></div>
         </article>
       </section>
 
