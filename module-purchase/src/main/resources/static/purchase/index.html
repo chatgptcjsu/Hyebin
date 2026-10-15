@@ -59,26 +59,18 @@
         <article class="panel compact-chart-panel">
           <div class="panel-heading">
             <div><p class="panel-kicker">MONTHLY COMPARISON</p><h2>월별 금액 비교</h2></div>
-            <div class="legend"><span><i class="legend-swatch plan-swatch"></i>계획</span><span><i class="legend-swatch actual-swatch"></i>실적</span></div>
+            <div class="legend"><span><i class="legend-line plan-line"></i>계획</span><span><i class="legend-line actual-line"></i>실적</span></div>
           </div>
           <div id="monthly-graph" class="compact-chart" aria-label="월별 계획과 실적 비교 그래프"></div>
-          <div class="chart-foot"><span>막대 길이: 금액 비례</span><span>단위: 백만원</span></div>
+          <div class="chart-foot"><span>선·점 높이: 금액 비례</span><span>단위: 백만원</span></div>
         </article>
       </section>
 
-      <section class="breakdown-grid" aria-label="구매 구성 분석">
-        <article class="panel breakdown-panel">
-          <div class="panel-heading">
-            <div><p class="panel-kicker">BY BUSINESS UNIT</p><h2>사업부별 실적</h2></div>
-          </div>
-          <div id="business-breakdown" class="breakdown-list"></div>
-        </article>
-        <article class="panel breakdown-panel supplier-panel">
-          <div class="panel-heading">
-            <div><p class="panel-kicker">SUPPLIER CONCENTRATION</p><h2>협력업체 TOP 10</h2></div>
-          </div>
-          <div id="supplier-breakdown" class="breakdown-list"></div>
-        </article>
+      <section class="panel breakdown-panel category-total-panel" aria-labelledby="business-breakdown-title">
+        <div class="panel-heading">
+          <div><p class="panel-kicker">CATEGORY TOTALS</p><h2 id="business-breakdown-title">사업부별 실적 합계</h2><p class="section-caption">첫 번째 시트의 구분 항목별 당월 실적 합계</p></div>
+        </div>
+        <div id="business-breakdown" class="breakdown-list"></div>
       </section>
 
       <section class="panel detail-panel" aria-labelledby="detail-title">
@@ -86,28 +78,17 @@
           <div><p class="panel-kicker">PURCHASE DETAILS</p><h2 id="detail-title">월별 상세 내역</h2></div>
           <div class="detail-filters">
             <label>월<select id="month-select" aria-label="상세 내역 월"></select></label>
-            <label>사업부<select id="business-filter" aria-label="사업부 필터"><option value="">전체 사업부</option></select></label>
-            <label class="supplier-search">업체<input id="supplier-filter" type="search" placeholder="업체명 검색"></label>
+            <label>구분<select id="category-filter" aria-label="구분 필터"><option value="">전체 구분</option></select></label>
             <button id="search-button" class="secondary-button" type="button">조회</button>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>사업부</th><th>구분</th><th>협력업체</th><th>계획</th><th>실적</th><th>차이</th><th>비고</th></tr></thead>
-            <tbody id="detail-body"><tr><td colspan="7" class="empty-state">연도와 월 자료를 선택해 주세요.</td></tr></tbody>
+            <thead><tr><th>구분</th><th>전월 실적</th><th>계획</th><th>실적</th><th>계획 대비 차이</th><th>전월 대비 차이</th><th>계획 대비 증감 사유</th><th>전월 대비 증감 사유</th></tr></thead>
+            <tbody id="detail-body"><tr><td colspan="8" class="empty-state">연도와 월 자료를 선택해 주세요.</td></tr></tbody>
           </table>
         </div>
         <div id="detail-pagination" class="pagination"></div>
-      </section>
-
-      <section class="panel history-panel" aria-labelledby="history-title">
-        <div class="panel-heading"><div><p class="panel-kicker">UPLOAD AUDIT</p><h2 id="history-title">자료 반영 이력</h2></div></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>연월</th><th>상태</th><th>파일명</th><th>상세 건수</th><th>계획</th><th>실적</th><th>업로드 일시</th></tr></thead>
-            <tbody id="history-body"><tr><td colspan="7" class="empty-state">업로드 이력을 불러오는 중입니다.</td></tr></tbody>
-          </table>
-        </div>
       </section>
 
       <footer class="page-footer">구매실적 모니터링 <span>·</span> 표시 금액은 업로드된 원본 자료 기준입니다.</footer>

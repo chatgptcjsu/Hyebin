@@ -15,8 +15,7 @@ public class PurchaseDashboardResponse {
     private BigDecimal totalVarianceAmount;
     private BigDecimal achievementRate;
     private List<MonthPoint> monthly;
-    private List<BreakdownItem> businessUnits;
-    private List<BreakdownItem> topSuppliers;
+    private List<BreakdownItem> categoryTotals;
 
     @Getter
     @Builder

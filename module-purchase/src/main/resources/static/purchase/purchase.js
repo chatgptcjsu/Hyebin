@@ -1,8 +1,7 @@
 const apiRoot = '/purchase-api';
 const yearSelect = document.getElementById('year-select');
 const monthSelect = document.getElementById('month-select');
-const businessFilter = document.getElementById('business-filter');
-const supplierFilter = document.getElementById('supplier-filter');
+const categoryFilter = document.getElementById('category-filter');
 const notice = document.getElementById('notice');
 let activePage = 0;
 
@@ -57,19 +56,35 @@ function renderMonthlySummary(points) {
 
 function renderCompactGraph(points) {
   const root = document.getElementById('monthly-graph');
-  const maxAmount = Math.max(1, ...(points || []).flatMap((point) => [Number(point.planAmount || 0), Number(point.actualAmount || 0)]));
-  root.innerHTML = (points || []).map((point) => {
-    const plan = Number(point.planAmount || 0);
-    const actual = Number(point.actualAmount || 0);
-    const planWidth = point.uploaded ? Math.max(plan > 0 ? 1 : 0, plan / maxAmount * 100) : 0;
-    const actualWidth = point.uploaded ? Math.max(actual > 0 ? 1 : 0, actual / maxAmount * 100) : 0;
-    return `<button class="compact-month-row${point.uploaded ? '' : ' is-unuploaded'}" type="button" data-month="${point.month}" ${point.uploaded ? '' : 'disabled'} aria-label="${point.month}월 계획 ${money(plan)}백만원, 실적 ${money(actual)}백만원">
-      <span class="compact-month-label">${String(point.month).padStart(2, '0')}월</span>
-      <span class="compact-bars"><i class="compact-bar plan-bar" style="width:${planWidth}%" title="계획 ${money(plan)}백만원"></i><i class="compact-bar actual-bar" style="width:${actualWidth}%" title="실적 ${money(actual)}백만원"></i></span>
-    </button>`;
+  const uploaded = (points || []).filter((point) => point.uploaded);
+  if (!uploaded.length) {
+    root.innerHTML = '<p class="empty-inline">그래프에 표시할 월별 자료가 없습니다.</p>';
+    return;
+  }
+  const maxAmount = Math.max(1, ...uploaded.flatMap((point) => [Number(point.planAmount || 0), Number(point.actualAmount || 0)]));
+  const left = 42, right = 468, top = 16, bottom = 142;
+  const x = (month) => left + (right - left) * (month - 1) / 11;
+  const y = (value) => bottom - Number(value || 0) / maxAmount * (bottom - top);
+  const makePath = (key) => {
+    let previousMonth = 0;
+    return (points || []).map((point) => {
+      if (!point.uploaded) { previousMonth = 0; return ''; }
+      const command = previousMonth > 0 && previousMonth === point.month - 1 ? 'L' : 'M';
+      previousMonth = point.month;
+      return `${command} ${x(point.month)} ${y(point[key])}`;
+    }).filter(Boolean).join(' ');
+  };
+  const grid = [0, 1, 2, 3].map((tick) => {
+    const value = maxAmount * (1 - tick / 3);
+    const yy = top + (bottom - top) * tick / 3;
+    return `<line x1="${left}" x2="${right}" y1="${yy}" y2="${yy}" class="chart-gridline"/><text x="${left - 7}" y="${yy + 3}" text-anchor="end" class="axis-label">${money(value)}</text>`;
   }).join('');
-  root.querySelectorAll('[data-month]').forEach((button) => button.addEventListener('click', () => {
-    monthSelect.value = button.dataset.month;
+  const labels = Array.from({ length: 12 }, (_, index) => `<text x="${x(index + 1)}" y="${bottom + 20}" text-anchor="middle" class="axis-label">${index + 1}월</text>`).join('');
+  const pointsMarkup = uploaded.map((point) => `<a href="#detail-title" class="graph-month-point" data-month="${point.month}" aria-label="${point.month}월 상세 보기"><circle cx="${x(point.month)}" cy="${y(point.planAmount)}" r="3" class="trend-point plan-point"><title>${point.month}월 계획 ${money(point.planAmount)}백만원</title></circle><circle cx="${x(point.month)}" cy="${y(point.actualAmount)}" r="3" class="trend-point actual-point"><title>${point.month}월 실적 ${money(point.actualAmount)}백만원</title></circle></a>`).join('');
+  root.innerHTML = `<svg viewBox="0 0 490 174" role="img" aria-label="월별 계획과 실적 꺾은선 그래프" preserveAspectRatio="none">
+    ${grid}<path d="${makePath('planAmount')}" class="trend-line plan-trend"/><path d="${makePath('actualAmount')}" class="trend-line actual-trend"/>${pointsMarkup}${labels}</svg>`;
+  root.querySelectorAll('[data-month]').forEach((point) => point.addEventListener('click', () => {
+    monthSelect.value = point.dataset.month;
     activePage = 0;
     loadDetails();
   }));
@@ -86,17 +101,17 @@ function renderBreakdown(rootId, items, emptyText) {
     const width = Math.max(Number(item.amount) > 0 ? 2 : 0, Number(item.amount || 0) / maxAmount * 100);
     return `<div class="breakdown-item">
       <div class="breakdown-label"><span class="rank">${String(index + 1).padStart(2, '0')}</span><strong title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</strong><span class="breakdown-amount">${money(item.amount)}</span></div>
-      <div class="breakdown-track"><i class="breakdown-fill ${rootId === 'supplier-breakdown' ? 'supplier-fill' : ''}" style="width:${width}%"></i></div>
+      <div class="breakdown-track"><i class="breakdown-fill" style="width:${width}%"></i></div>
       <div class="breakdown-share">누계 실적의 ${pct(item.shareRate)}</div>
     </div>`;
   }).join('');
 }
 
 function setFilterOptions(items) {
-  const current = businessFilter.value;
+  const current = categoryFilter.value;
   const names = [...new Set((items || []).map((item) => item.name))];
-  businessFilter.innerHTML = '<option value="">전체 사업부</option>' + names.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
-  if (names.includes(current)) businessFilter.value = current;
+  categoryFilter.innerHTML = '<option value="">전체 구분</option>' + names.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
+  if (names.includes(current)) categoryFilter.value = current;
 }
 
 function setMonthOptions(points) {
@@ -115,43 +130,19 @@ async function loadDashboard() {
     const data = await requestJson(`${apiRoot}/dashboard?year=${encodeURIComponent(year)}`);
     renderMonthlySummary(data.monthly || []);
     renderCompactGraph(data.monthly || []);
-    renderBreakdown('business-breakdown', data.businessUnits, '사업부 실적 자료가 없습니다.');
-    renderBreakdown('supplier-breakdown', data.topSuppliers, '협력업체 자료가 없습니다.');
-    setFilterOptions(data.businessUnits || []);
+    renderBreakdown('business-breakdown', data.categoryTotals, '첫 번째 시트에 실적 구분이 없습니다.');
+    setFilterOptions(data.categoryTotals || []);
     setMonthOptions(data.monthly || []);
     if (monthSelect.value) loadDetails();
     else renderEmptyDetails('해당 연도에 업로드된 월 자료가 없습니다.');
-    loadHistory();
   } catch (error) {
     showNotice(error.message, 'error');
     renderEmptyDetails('대시보드 데이터를 불러오지 못했습니다.');
   }
 }
 
-async function loadHistory() {
-  const root = document.getElementById('history-body');
-  try {
-    const rows = await requestJson(`${apiRoot}/uploads?year=${encodeURIComponent(yearSelect.value)}`);
-    if (!rows?.length) {
-      root.innerHTML = '<tr><td colspan="7" class="empty-state">해당 연도의 업로드 이력이 없습니다.</td></tr>';
-      return;
-    }
-    root.innerHTML = rows.map((item) => {
-      const statusLabel = item.uploadStatus === 'CURRENT' ? '현재 반영' : '교체됨';
-      const statusClass = item.uploadStatus === 'CURRENT' ? 'history-status current' : 'history-status replaced';
-      const uploadedAt = item.createdAt ? new Date(item.createdAt).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
-      return `<tr><td>${item.purchaseYear}년 ${String(item.purchaseMonth).padStart(2, '0')}월</td><td><span class="${statusClass}">${statusLabel}</span></td>
-        <td class="history-filename" title="${escapeHtml(item.originalFilename)}">${escapeHtml(item.originalFilename)}</td>
-        <td class="number-cell">${Number(item.detailRowCount || 0)}</td><td class="number-cell">${money(item.planAmount)}</td>
-        <td class="number-cell">${money(item.actualAmount)}</td><td>${escapeHtml(uploadedAt)}</td></tr>`;
-    }).join('');
-  } catch (error) {
-    root.innerHTML = `<tr><td colspan="7" class="empty-state">이력을 불러오지 못했습니다: ${escapeHtml(error.message)}</td></tr>`;
-  }
-}
-
 function renderEmptyDetails(message) {
-  document.getElementById('detail-body').innerHTML = `<tr><td colspan="7" class="empty-state">${escapeHtml(message)}</td></tr>`;
+  document.getElementById('detail-body').innerHTML = `<tr><td colspan="8" class="empty-state">${escapeHtml(message)}</td></tr>`;
   document.getElementById('detail-pagination').textContent = '';
 }
 
@@ -164,20 +155,20 @@ async function loadDetails() {
     page: String(activePage),
     size: '50'
   });
-  if (businessFilter.value) params.set('businessUnit', businessFilter.value);
-  if (supplierFilter.value.trim()) params.set('supplierName', supplierFilter.value.trim());
+  if (categoryFilter.value) params.set('categoryName', categoryFilter.value);
   try {
     const page = await requestJson(`${apiRoot}/details?${params.toString()}`);
     const rows = page.content || [];
     if (!rows.length) return renderEmptyDetails('조건에 맞는 상세 내역이 없습니다.');
-    document.getElementById('detail-body').innerHTML = rows.map((line) => `<tr>
-      <td><span class="business-chip">${escapeHtml(line.businessUnit || '미분류')}</span></td>
-      <td>${escapeHtml(line.importType || '—')}</td>
-      <td class="supplier-cell">${escapeHtml(line.supplierName)}</td>
-      <td class="number-cell">${money(line.planAmount)}</td>
-      <td class="number-cell">${money(line.actualAmount)}</td>
-      <td class="number-cell ${Number(line.varianceAmount || 0) > 0 ? 'text-positive' : Number(line.varianceAmount || 0) < 0 ? 'text-negative' : ''}">${Number(line.varianceAmount || 0) > 0 ? '+' : ''}${money(line.varianceAmount)}</td>
-      <td class="note-cell" title="${escapeHtml(line.noteText || '')}">${escapeHtml(line.noteText || '—')}</td>
+    document.getElementById('detail-body').innerHTML = rows.map((category) => `<tr>
+      <td><span class="business-chip">${escapeHtml(category.categoryName)}</span></td>
+      <td class="number-cell">${money(category.previousActualAmount)}</td>
+      <td class="number-cell">${money(category.planAmount)}</td>
+      <td class="number-cell">${money(category.actualAmount)}</td>
+      <td class="number-cell ${Number(category.planVarianceAmount || 0) > 0 ? 'text-positive' : Number(category.planVarianceAmount || 0) < 0 ? 'text-negative' : ''}">${Number(category.planVarianceAmount || 0) > 0 ? '+' : ''}${money(category.planVarianceAmount)}</td>
+      <td class="number-cell ${Number(category.previousMonthVarianceAmount || 0) > 0 ? 'text-positive' : Number(category.previousMonthVarianceAmount || 0) < 0 ? 'text-negative' : ''}">${Number(category.previousMonthVarianceAmount || 0) > 0 ? '+' : ''}${money(category.previousMonthVarianceAmount)}</td>
+      <td class="note-cell" title="${escapeHtml(category.planVarianceReason || '')}">${escapeHtml(category.planVarianceReason || '—')}</td>
+      <td class="note-cell" title="${escapeHtml(category.previousMonthVarianceReason || '')}">${escapeHtml(category.previousMonthVarianceReason || '—')}</td>
     </tr>`).join('');
     const pageNumber = Number(page.page || 0);
     const pageCount = Number(page.totalPages || 0);
@@ -209,7 +200,7 @@ async function uploadFile(file, confirmReplace = false) {
   if (result.alreadyCurrent) {
     showNotice(`${result.purchaseYear}년 ${result.purchaseMonth}월 동일한 파일이 이미 반영되어 있습니다.`, 'info');
   } else {
-    showNotice(`${result.purchaseYear}년 ${result.purchaseMonth}월 자료를 반영했습니다. 상세 ${result.detailRowCount}건`, 'success');
+    showNotice(`${result.purchaseYear}년 ${result.purchaseMonth}월 자료를 반영했습니다. 첫 시트 요약 ${result.summaryRowCount}건`, 'success');
   }
   yearSelect.value = String(result.purchaseYear);
   await loadDashboard();
@@ -232,9 +223,6 @@ function initializeControls() {
   }
   yearSelect.addEventListener('change', loadDashboard);
   document.getElementById('search-button').addEventListener('click', () => { activePage = 0; loadDetails(); });
-  supplierFilter.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') { activePage = 0; loadDetails(); }
-  });
   document.getElementById('upload-file').addEventListener('change', async (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';

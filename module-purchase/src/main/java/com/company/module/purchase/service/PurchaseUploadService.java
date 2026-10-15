@@ -1,13 +1,12 @@
 package com.company.module.purchase.service;
 
 import com.company.core.security.CurrentUserProvider;
-import com.company.module.purchase.dto.PurchaseHistoryResponse;
-import com.company.module.purchase.dto.PurchaseLineResponse;
+import com.company.module.purchase.dto.PurchaseCategoryResponse;
 import com.company.module.purchase.dto.PurchaseUploadResponse;
-import com.company.module.purchase.entity.PurchaseLine;
+import com.company.module.purchase.entity.PurchaseCategory;
 import com.company.module.purchase.entity.PurchaseMonthSnapshot;
 import com.company.module.purchase.entity.PurchaseUploadBatch;
-import com.company.module.purchase.repository.PurchaseLineRepository;
+import com.company.module.purchase.repository.PurchaseCategoryRepository;
 import com.company.module.purchase.repository.PurchaseMonthSnapshotRepository;
 import com.company.module.purchase.repository.PurchaseUploadBatchRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +33,7 @@ public class PurchaseUploadService {
     private final PurchaseExcelParser excelParser;
     private final PurchaseUploadBatchRepository batchRepository;
     private final PurchaseMonthSnapshotRepository snapshotRepository;
-    private final PurchaseLineRepository lineRepository;
+    private final PurchaseCategoryRepository categoryRepository;
     private final CurrentUserProvider currentUserProvider;
 
     @Transactional
@@ -59,7 +58,7 @@ public class PurchaseUploadService {
                     .uploadStatus("PENDING_REPLACEMENT_CONFIRMATION")
                     .planAmount(parsed.planAmount())
                     .actualAmount(parsed.actualAmount())
-                    .detailRowCount(parsed.lines().size())
+                    .summaryRowCount(parsed.categories().size())
                     .alreadyCurrent(false)
                     .requiresReplacementConfirmation(true)
                     .build();
@@ -74,30 +73,30 @@ public class PurchaseUploadService {
             .fileSha256(sha256)
             .planAmount(parsed.planAmount())
             .actualAmount(parsed.actualAmount())
-            .detailRowCount(parsed.lines().size())
+            .summaryRowCount(parsed.categories().size())
             .createdBy(userId)
             .build());
 
-        List<PurchaseLine> lines = parsed.lines().stream()
-            .map(line -> PurchaseLine.builder()
+        List<PurchaseCategory> categories = parsed.categories().stream()
+            .map(category -> PurchaseCategory.builder()
                 .uploadBatchId(batch.getUploadBatchId())
-                .sourceRowNo(line.sourceRowNo())
-                .businessUnit(line.businessUnit())
-                .importType(line.importType())
-                .supplierCode(line.supplierCode())
-                .unitName(line.unitName())
-                .previousQuantity(line.previousQuantity())
-                .previousAmount(line.previousAmount())
-                .planQuantity(line.planQuantity())
-                .planAmount(line.planAmount())
-                .actualQuantity(line.actualQuantity())
-                .actualAmount(line.actualAmount())
-                .noteText(line.noteText())
-                .supplierName(line.supplierName())
+                .sourceRowNo(category.sourceRowNo())
+                .categoryName(category.categoryName())
+                .previousActualAmount(category.previousActualAmount())
+                .planForeignAmount(category.planForeignAmount())
+                .planDomesticAmount(category.planDomesticAmount())
+                .planAmount(category.planAmount())
+                .actualForeignAmount(category.actualForeignAmount())
+                .actualDomesticAmount(category.actualDomesticAmount())
+                .actualAmount(category.actualAmount())
+                .planVarianceAmount(category.planVarianceAmount())
+                .previousMonthVarianceAmount(category.previousMonthVarianceAmount())
+                .planVarianceReason(category.planVarianceReason())
+                .previousMonthVarianceReason(category.previousMonthVarianceReason())
                 .createdBy(userId)
                 .build())
             .toList();
-        lineRepository.saveAll(lines);
+        categoryRepository.saveAll(categories);
 
         if (current == null) {
             snapshotRepository.save(PurchaseMonthSnapshot.builder()
@@ -114,23 +113,18 @@ public class PurchaseUploadService {
         return toResponse(batch, false, false);
     }
 
-    public List<PurchaseHistoryResponse> history(Integer year) {
-        return batchRepository.findByPurchaseYearAndDeletedYnOrderByPurchaseMonthAscCreatedAtDesc(year, "N")
-            .stream().map(PurchaseHistoryResponse::from).toList();
-    }
-
-    public Page<PurchaseLineResponse> detail(Integer year, Integer month, String businessUnit,
-                                             String supplierName, int page, int size) {
+    public Page<PurchaseCategoryResponse> detail(Integer year, Integer month, String categoryName,
+                                                 int page, int size) {
         if (page < 0 || size < 1 || size > 200 || month < 1 || month > 12) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
         PurchaseMonthSnapshot snapshot = snapshotRepository
             .findByPurchaseYearAndPurchaseMonthAndDeletedYn(year, month, "N")
             .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
-        Page<PurchaseLineResponse> result = lineRepository.searchCurrentBatch(
-            snapshot.getCurrentUploadBatchId(), emptyToNull(businessUnit), emptyToNull(supplierName),
+        Page<PurchaseCategoryResponse> result = categoryRepository.searchCurrentBatch(
+            snapshot.getCurrentUploadBatchId(), emptyToNull(categoryName),
             PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "sourceRowNo")))
-            .map(PurchaseLineResponse::from);
+            .map(PurchaseCategoryResponse::from);
         return result;
     }
 
@@ -144,7 +138,7 @@ public class PurchaseUploadService {
             .uploadStatus(batch.getUploadStatus())
             .planAmount(batch.getPlanAmount())
             .actualAmount(batch.getActualAmount())
-            .detailRowCount(batch.getDetailRowCount())
+            .summaryRowCount(batch.getSummaryRowCount())
             .alreadyCurrent(alreadyCurrent)
             .requiresReplacementConfirmation(requiresConfirmation)
             .build();

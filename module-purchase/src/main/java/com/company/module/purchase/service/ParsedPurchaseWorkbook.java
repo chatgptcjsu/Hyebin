@@ -8,6 +8,6 @@ public record ParsedPurchaseWorkbook(
     Integer purchaseMonth,
     BigDecimal planAmount,
     BigDecimal actualAmount,
-    List<ParsedPurchaseLine> lines
+    List<ParsedPurchaseCategory> categories
 ) {
 }

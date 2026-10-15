@@ -25,39 +25,44 @@ class PurchaseExcelParserTest {
         assertEquals(1, result.purchaseMonth());
         assertEquals(new BigDecimal("897.7069"), result.planAmount());
         assertEquals(new BigDecimal("682.606"), result.actualAmount());
-        assertEquals(1, result.lines().size());
-        assertEquals("청수", result.lines().get(0).supplierName());
-        assertEquals("공통", result.lines().get(0).businessUnit());
+        assertEquals(1, result.categories().size());
+        assertEquals("기계설비공사", result.categories().get(0).categoryName());
+        assertEquals(new BigDecimal("10336.786152"), result.categories().get(0).previousActualAmount());
     }
 
     @Test
-    void rejectsWorkbookWhenSummaryAndDetailAmountsDoNotMatch() throws Exception {
+    void rejectsWorkbookWhenSummaryAndCategoryAmountsDoNotMatch() throws Exception {
         MockMultipartFile file = workbook("2026년 1월 구매실적", new BigDecimal("100"), new BigDecimal("50"),
             new BigDecimal("99"), new BigDecimal("49"));
 
         assertThrows(RuntimeException.class, () -> parser.parse(file));
     }
 
-    private MockMultipartFile workbook(String title, BigDecimal plan, BigDecimal actual,
-                                       BigDecimal detailPlan, BigDecimal detailActual) throws Exception {
+    private MockMultipartFile workbook(String title, BigDecimal totalPlan, BigDecimal totalActual,
+                                       BigDecimal categoryPlan, BigDecimal categoryActual) throws Exception {
         try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             var summary = workbook.createSheet("구매실적요약");
             summary.createRow(0).createCell(0).setCellValue(title);
-            var summaryTotal = summary.createRow(13);
-            summaryTotal.createCell(0).setCellValue("기계설비공사");
-            summaryTotal.createCell(4).setCellValue(plan.doubleValue());
-            summaryTotal.createCell(7).setCellValue(actual.doubleValue());
+            var category = summary.createRow(13);
+            category.createCell(0).setCellValue("기계설비공사");
+            category.createCell(1).setCellValue(10336.786152);
+            category.createCell(2).setCellValue(0);
+            category.createCell(3).setCellValue(categoryPlan.doubleValue());
+            category.createCell(4).setCellValue(categoryPlan.doubleValue());
+            category.createCell(5).setCellValue(0);
+            category.createCell(6).setCellValue(categoryActual.doubleValue());
+            category.createCell(7).setCellValue(categoryActual.doubleValue());
+            category.createCell(8).setCellValue(categoryActual.subtract(categoryPlan).doubleValue());
+            category.createCell(9).setCellValue(-9654.180152);
+            category.createCell(10).setCellValue("계획 대비 사유");
+            category.createCell(11).setCellValue("전월 대비 사유");
+            var total = summary.createRow(14);
+            total.createCell(0).setCellValue("합계");
+            total.createCell(4).setCellValue(totalPlan.doubleValue());
+            total.createCell(7).setCellValue(totalActual.doubleValue());
 
-            var detail = workbook.createSheet("기계설비공사");
-            var line = detail.createRow(4);
-            line.createCell(1).setCellValue("기계설비공사");
-            line.createCell(2).setCellValue("공통");
-            line.createCell(3).setCellValue("내자");
-            line.createCell(5).setCellValue("SIK");
-            line.createCell(9).setCellValue(detailPlan.doubleValue());
-            line.createCell(11).setCellValue(detailActual.doubleValue());
-            line.createCell(12).setCellValue("테스트 구매 항목");
-            line.createCell(13).setCellValue("청수");
+            var ignoredSecondSheet = workbook.createSheet("기계설비공사");
+            ignoredSecondSheet.createRow(0).createCell(0).setCellValue("이 시트는 읽으면 안 됨");
 
             workbook.write(output);
             return new MockMultipartFile("file", "purchase.xlsx",

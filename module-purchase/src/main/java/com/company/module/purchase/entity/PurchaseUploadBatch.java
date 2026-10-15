@@ -48,8 +48,8 @@ public class PurchaseUploadBatch {
     @Column(name = "ACTUAL_AMOUNT", nullable = false, precision = 18, scale = 6)
     private BigDecimal actualAmount;
 
-    @Column(name = "DETAIL_ROW_COUNT", nullable = false)
-    private Integer detailRowCount;
+    @Column(name = "SUMMARY_ROW_COUNT", nullable = false)
+    private Integer summaryRowCount;
 
     @Column(name = "CREATED_AT", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -75,14 +75,14 @@ public class PurchaseUploadBatch {
     @Builder
     private PurchaseUploadBatch(Integer purchaseYear, Integer purchaseMonth, String originalFilename,
                                 String fileSha256, BigDecimal planAmount, BigDecimal actualAmount,
-                                Integer detailRowCount, Long createdBy) {
+                                Integer summaryRowCount, Long createdBy) {
         this.purchaseYear = purchaseYear;
         this.purchaseMonth = purchaseMonth;
         this.originalFilename = originalFilename;
         this.fileSha256 = fileSha256;
         this.planAmount = planAmount;
         this.actualAmount = actualAmount;
-        this.detailRowCount = detailRowCount;
+        this.summaryRowCount = summaryRowCount;
         this.uploadStatus = "CURRENT";
         this.createdBy = createdBy;
         this.deletedYn = "N";

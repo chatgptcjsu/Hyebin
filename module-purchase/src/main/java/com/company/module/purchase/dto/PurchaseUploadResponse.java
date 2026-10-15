@@ -15,7 +15,7 @@ public class PurchaseUploadResponse {
     private String uploadStatus;
     private BigDecimal planAmount;
     private BigDecimal actualAmount;
-    private Integer detailRowCount;
+    private Integer summaryRowCount;
     private boolean alreadyCurrent;
     private boolean requiresReplacementConfirmation;
 }

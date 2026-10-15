@@ -3,10 +3,10 @@ package com.company.module.purchase.service;
 import com.company.core.common.exception.BusinessException;
 import com.company.core.common.exception.ErrorCode;
 import com.company.module.purchase.dto.PurchaseDashboardResponse;
-import com.company.module.purchase.entity.PurchaseLine;
+import com.company.module.purchase.entity.PurchaseCategory;
 import com.company.module.purchase.entity.PurchaseMonthSnapshot;
 import com.company.module.purchase.entity.PurchaseUploadBatch;
-import com.company.module.purchase.repository.PurchaseLineRepository;
+import com.company.module.purchase.repository.PurchaseCategoryRepository;
 import com.company.module.purchase.repository.PurchaseMonthSnapshotRepository;
 import com.company.module.purchase.repository.PurchaseUploadBatchRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ public class PurchaseDashboardService {
 
     private final PurchaseMonthSnapshotRepository snapshotRepository;
     private final PurchaseUploadBatchRepository batchRepository;
-    private final PurchaseLineRepository lineRepository;
+    private final PurchaseCategoryRepository categoryRepository;
 
     public PurchaseDashboardResponse getDashboard(Integer year) {
         if (year == null || year < 2000 || year > 2200) {
@@ -64,27 +64,17 @@ public class PurchaseDashboardService {
         }
 
         List<Long> batchIds = activeBatches.values().stream().map(PurchaseUploadBatch::getUploadBatchId).toList();
-        List<PurchaseLine> lines = batchIds.isEmpty() ? List.of()
-            : lineRepository.findByUploadBatchIdInAndDeletedYn(batchIds, "N");
-        Map<String, BigDecimal> byBusinessUnit = new LinkedHashMap<>();
-        Map<String, BigDecimal> bySupplier = new HashMap<>();
-        for (PurchaseLine line : lines) {
-            BigDecimal actual = amount(line.getActualAmount());
-            String businessUnit = line.getBusinessUnit() == null || line.getBusinessUnit().isBlank()
-                ? "미분류" : line.getBusinessUnit();
-            byBusinessUnit.merge(businessUnit, actual, BigDecimal::add);
-            bySupplier.merge(line.getSupplierName(), actual, BigDecimal::add);
+        List<PurchaseCategory> categories = batchIds.isEmpty() ? List.of()
+            : categoryRepository.findByUploadBatchIdInAndDeletedYn(batchIds, "N");
+        Map<String, BigDecimal> categoryAmounts = new LinkedHashMap<>();
+        for (PurchaseCategory category : categories) {
+            categoryAmounts.merge(category.getCategoryName(), amount(category.getActualAmount()), BigDecimal::add);
         }
 
         BigDecimal denominator = totalActual;
-        List<PurchaseDashboardResponse.BreakdownItem> businessUnits = byBusinessUnit.entrySet().stream()
+        List<PurchaseDashboardResponse.BreakdownItem> categoryTotals = categoryAmounts.entrySet().stream()
             .map(entry -> breakdown(entry.getKey(), entry.getValue(), denominator))
             .sorted(Comparator.comparing(PurchaseDashboardResponse.BreakdownItem::getAmount).reversed())
-            .toList();
-        List<PurchaseDashboardResponse.BreakdownItem> topSuppliers = bySupplier.entrySet().stream()
-            .map(entry -> breakdown(entry.getKey(), entry.getValue(), denominator))
-            .sorted(Comparator.comparing(PurchaseDashboardResponse.BreakdownItem::getAmount).reversed())
-            .limit(10)
             .toList();
 
         return PurchaseDashboardResponse.builder()
@@ -94,8 +84,7 @@ public class PurchaseDashboardService {
             .totalVarianceAmount(totalActual.subtract(totalPlan))
             .achievementRate(rate(totalActual, totalPlan))
             .monthly(months)
-            .businessUnits(businessUnits)
-            .topSuppliers(topSuppliers)
+            .categoryTotals(categoryTotals)
             .build();
     }
 

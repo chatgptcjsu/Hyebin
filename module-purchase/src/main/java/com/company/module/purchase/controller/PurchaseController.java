@@ -1,9 +1,8 @@
 package com.company.module.purchase.controller;
 
 import com.company.core.common.response.ApiResponse;
+import com.company.module.purchase.dto.PurchaseCategoryResponse;
 import com.company.module.purchase.dto.PurchaseDashboardResponse;
-import com.company.module.purchase.dto.PurchaseHistoryResponse;
-import com.company.module.purchase.dto.PurchaseLineResponse;
 import com.company.module.purchase.dto.PurchaseUploadResponse;
 import com.company.module.purchase.service.PurchaseDashboardService;
 import com.company.module.purchase.service.PurchaseUploadService;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
 
 @RestController
 @Validated
@@ -47,23 +45,15 @@ public class PurchaseController {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getDashboard(year)));
     }
 
-    @GetMapping("/uploads")
-    @PreAuthorize("hasAuthority('PURCHASE_READ')")
-    public ResponseEntity<ApiResponse<List<PurchaseHistoryResponse>>> history(
-            @RequestParam @Min(2000) @Max(2200) Integer year) {
-        return ResponseEntity.ok(ApiResponse.success(uploadService.history(year)));
-    }
-
     @GetMapping("/details")
     @PreAuthorize("hasAuthority('PURCHASE_READ')")
-    public ResponseEntity<ApiResponse<Page<PurchaseLineResponse>>> detail(
+    public ResponseEntity<ApiResponse<Page<PurchaseCategoryResponse>>> detail(
             @RequestParam @Min(2000) @Max(2200) Integer year,
             @RequestParam @Min(1) @Max(12) Integer month,
-            @RequestParam(required = false) String businessUnit,
-            @RequestParam(required = false) String supplierName,
+            @RequestParam(required = false) String categoryName,
             @RequestParam(defaultValue = "0") @Min(0) Integer page,
             @RequestParam(defaultValue = "50") @Min(1) @Max(200) Integer size) {
         return ResponseEntity.ok(ApiResponse.success(
-            uploadService.detail(year, month, businessUnit, supplierName, page, size)));
+            uploadService.detail(year, month, categoryName, page, size)));
     }
 }

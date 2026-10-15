@@ -23,10 +23,9 @@ import java.util.regex.Pattern;
 @Component
 public class PurchaseExcelParser {
 
-    private static final String SUMMARY_SHEET = "구매실적요약";
-    private static final String DETAIL_SHEET = "기계설비공사";
-    private static final String ITEM_NAME = "기계설비공사";
+    private static final String TOTAL_LABEL = "합계";
     private static final Pattern PERIOD_PATTERN = Pattern.compile("(?:'|20)?(\\d{2,4})년\\s*(\\d{1,2})월");
+    private static final BigDecimal AMOUNT_TOLERANCE = new BigDecimal("0.01");
     private static final int MAX_ROWS = 20_000;
 
     public ParsedPurchaseWorkbook parse(MultipartFile file) {
@@ -34,29 +33,29 @@ public class PurchaseExcelParser {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
         try (InputStream input = file.getInputStream(); Workbook workbook = WorkbookFactory.create(input)) {
-            Sheet summary = workbook.getSheet(SUMMARY_SHEET);
-            Sheet detail = workbook.getSheet(DETAIL_SHEET);
-            if (summary == null || detail == null) {
+            if (workbook.getNumberOfSheets() < 1) {
                 throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
             }
+            Sheet firstSheet = workbook.getSheetAt(0);
             FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
             DataFormatter formatter = new DataFormatter();
-            int[] period = readPeriod(summary, formatter, evaluator);
-            BigDecimal plan = readSummaryAmount(summary, evaluator, 4);
-            BigDecimal actual = readSummaryAmount(summary, evaluator, 7);
-            List<ParsedPurchaseLine> lines = readLines(detail, formatter, evaluator);
-            if (lines.isEmpty()) {
+            int[] period = readPeriod(firstSheet, formatter, evaluator);
+            List<ParsedPurchaseCategory> categories = readCategories(firstSheet, formatter, evaluator);
+            if (categories.isEmpty()) {
                 throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
             }
-            BigDecimal detailPlan = lines.stream().map(ParsedPurchaseLine::planAmount)
+
+            BigDecimal categoryPlan = categories.stream().map(ParsedPurchaseCategory::planAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal detailActual = lines.stream().map(ParsedPurchaseLine::actualAmount)
+            BigDecimal categoryActual = categories.stream().map(ParsedPurchaseCategory::actualAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-            if (detailPlan.subtract(plan).abs().compareTo(new BigDecimal("0.01")) > 0
-                || detailActual.subtract(actual).abs().compareTo(new BigDecimal("0.01")) > 0) {
+            BigDecimal totalPlan = readTotalAmount(firstSheet, formatter, evaluator, 4).orElse(categoryPlan);
+            BigDecimal totalActual = readTotalAmount(firstSheet, formatter, evaluator, 7).orElse(categoryActual);
+            if (categoryPlan.subtract(totalPlan).abs().compareTo(AMOUNT_TOLERANCE) > 0
+                || categoryActual.subtract(totalActual).abs().compareTo(AMOUNT_TOLERANCE) > 0) {
                 throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
             }
-            return new ParsedPurchaseWorkbook(period[0], period[1], plan, actual, lines);
+            return new ParsedPurchaseWorkbook(period[0], period[1], totalPlan, totalActual, categories);
         } catch (BusinessException exception) {
             throw exception;
         } catch (Exception exception) {
@@ -64,9 +63,9 @@ public class PurchaseExcelParser {
         }
     }
 
-    private int[] readPeriod(Sheet summary, DataFormatter formatter, FormulaEvaluator evaluator) {
-        for (int rowIndex = 0; rowIndex < Math.min(summary.getLastRowNum() + 1, 8); rowIndex++) {
-            Row row = summary.getRow(rowIndex);
+    private int[] readPeriod(Sheet sheet, DataFormatter formatter, FormulaEvaluator evaluator) {
+        for (int rowIndex = 0; rowIndex < Math.min(sheet.getLastRowNum() + 1, 8); rowIndex++) {
+            Row row = sheet.getRow(rowIndex);
             String title = text(row == null ? null : row.getCell(0), formatter, evaluator);
             Matcher matcher = PERIOD_PATTERN.matcher(title);
             if (matcher.find()) {
@@ -80,51 +79,56 @@ public class PurchaseExcelParser {
         throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
     }
 
-    private BigDecimal readSummaryAmount(Sheet summary, FormulaEvaluator evaluator, int columnIndex) {
-        for (int rowIndex = 0; rowIndex <= summary.getLastRowNum(); rowIndex++) {
-            Row row = summary.getRow(rowIndex);
-            if (row == null || !ITEM_NAME.equals(normalize(cellText(row.getCell(0), evaluator)))) continue;
-            return number(row.getCell(columnIndex), evaluator);
-        }
-        throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
-    }
-
-    private List<ParsedPurchaseLine> readLines(Sheet detail, DataFormatter formatter, FormulaEvaluator evaluator) {
-        List<ParsedPurchaseLine> lines = new ArrayList<>();
-        int end = Math.min(detail.getLastRowNum(), MAX_ROWS);
+    private List<ParsedPurchaseCategory> readCategories(Sheet sheet, DataFormatter formatter,
+                                                         FormulaEvaluator evaluator) {
+        List<ParsedPurchaseCategory> categories = new ArrayList<>();
+        int end = Math.min(sheet.getLastRowNum(), MAX_ROWS);
         for (int rowIndex = 0; rowIndex <= end; rowIndex++) {
-            Row row = detail.getRow(rowIndex);
-            if (row == null || !ITEM_NAME.equals(normalize(text(row.getCell(1), formatter, evaluator)))) continue;
-            String supplier = text(row.getCell(13), formatter, evaluator);
-            if (supplier.isBlank()) continue;
-            lines.add(new ParsedPurchaseLine(
+            Row row = sheet.getRow(rowIndex);
+            if (row == null) continue;
+            String name = normalize(text(row.getCell(0), formatter, evaluator));
+            if (name.isBlank() || "구분".equals(name) || TOTAL_LABEL.equals(name)
+                || name.contains("구매실적")) continue;
+            if (!hasValue(row.getCell(4)) && !hasValue(row.getCell(7))) continue;
+
+            categories.add(new ParsedPurchaseCategory(
                 rowIndex + 1,
-                emptyToNull(text(row.getCell(2), formatter, evaluator)),
-                emptyToNull(text(row.getCell(3), formatter, evaluator)),
-                emptyToNull(text(row.getCell(4), formatter, evaluator)),
-                emptyToNull(text(row.getCell(5), formatter, evaluator)),
+                name,
+                number(row.getCell(1), evaluator),
+                number(row.getCell(2), evaluator),
+                number(row.getCell(3), evaluator),
+                number(row.getCell(4), evaluator),
+                number(row.getCell(5), evaluator),
                 number(row.getCell(6), evaluator),
                 number(row.getCell(7), evaluator),
                 number(row.getCell(8), evaluator),
                 number(row.getCell(9), evaluator),
-                number(row.getCell(10), evaluator),
-                number(row.getCell(11), evaluator),
-                emptyToNull(text(row.getCell(12), formatter, evaluator)),
-                supplier
+                emptyToNull(text(row.getCell(10), formatter, evaluator)),
+                emptyToNull(text(row.getCell(11), formatter, evaluator))
             ));
         }
-        return lines;
+        return categories;
+    }
+
+    private java.util.Optional<BigDecimal> readTotalAmount(Sheet sheet, DataFormatter formatter,
+                                                            FormulaEvaluator evaluator, int amountColumn) {
+        for (int rowIndex = 0; rowIndex <= Math.min(sheet.getLastRowNum(), MAX_ROWS); rowIndex++) {
+            Row row = sheet.getRow(rowIndex);
+            if (row != null && TOTAL_LABEL.equals(normalize(text(row.getCell(0), formatter, evaluator)))
+                && hasValue(row.getCell(amountColumn))) {
+                return java.util.Optional.of(number(row.getCell(amountColumn), evaluator));
+            }
+        }
+        return java.util.Optional.empty();
+    }
+
+    private boolean hasValue(Cell cell) {
+        return cell != null && cell.getCellType() != CellType.BLANK;
     }
 
     private String text(Cell cell, DataFormatter formatter, FormulaEvaluator evaluator) {
         if (cell == null) return "";
         return formatter.formatCellValue(cell, evaluator).trim();
-    }
-
-    private String cellText(Cell cell, FormulaEvaluator evaluator) {
-        if (cell == null) return "";
-        if (cell.getCellType() == CellType.STRING) return cell.getStringCellValue();
-        return cell.toString();
     }
 
     private BigDecimal number(Cell cell, FormulaEvaluator evaluator) {
