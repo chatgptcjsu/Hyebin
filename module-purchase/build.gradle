@@ -1,0 +1,44 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'com.company.module.purchase'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencies {
+    // 플랫폼 공통 클래스 참조만 허용
+    compileOnly project(':core')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    compileOnly 'org.springframework.boot:spring-boot-starter-security'
+
+    // 엑셀(xlsx) 파싱
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'
+
+    // Entity/DTO boilerplate
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly project(':core')
+}
+
+tasks.named('jar') {
+    enabled = true
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
