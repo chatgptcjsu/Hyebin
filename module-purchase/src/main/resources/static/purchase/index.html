@@ -66,29 +66,17 @@
         </article>
       </section>
 
-      <section class="panel breakdown-panel category-total-panel" aria-labelledby="business-breakdown-title">
-        <div class="panel-heading">
-          <div><p class="panel-kicker">CATEGORY TOTALS</p><h2 id="business-breakdown-title">사업부별 실적 합계</h2><p class="section-caption">첫 번째 시트의 구분 항목별 당월 실적 합계</p></div>
-        </div>
-        <div id="business-breakdown" class="breakdown-list"></div>
-      </section>
-
-      <section class="panel detail-panel" aria-labelledby="detail-title">
-        <div class="panel-heading detail-heading">
-          <div><p class="panel-kicker">PURCHASE DETAILS</p><h2 id="detail-title">월별 상세 내역</h2></div>
-          <div class="detail-filters">
-            <label>월<select id="month-select" aria-label="상세 내역 월"></select></label>
-            <label>구분<select id="category-filter" aria-label="구분 필터"><option value="">전체 구분</option></select></label>
-            <button id="search-button" class="secondary-button" type="button">조회</button>
-          </div>
+      <section class="panel reason-panel" aria-labelledby="detail-title">
+          <div class="panel-heading">
+          <div><p class="panel-kicker">YEARLY VARIANCE REASONS</p><h2 id="detail-title"><span id="reason-year">2026</span>년 월별 상세 내역</h2></div>
+          <span class="coverage-badge">금년도 1~12월</span>
         </div>
         <div class="table-wrap">
-          <table>
-            <thead><tr><th>구분</th><th>전월 실적</th><th>계획</th><th>실적</th><th>계획 대비 차이</th><th>전월 대비 차이</th><th>계획 대비 증감 사유</th><th>전월 대비 증감 사유</th></tr></thead>
-            <tbody id="detail-body"><tr><td colspan="8" class="empty-state">연도와 월 자료를 선택해 주세요.</td></tr></tbody>
+          <table class="reason-table">
+            <thead><tr><th>월</th><th>구분</th><th>계획</th><th>실적</th><th>계획 대비 차이</th><th>전월 대비 차이</th><th>계획 대비 증감 사유</th><th>전월 대비 증감 사유</th></tr></thead>
+            <tbody id="reason-body"><tr><td colspan="8" class="empty-state">연도 자료를 불러오는 중입니다.</td></tr></tbody>
           </table>
         </div>
-        <div id="detail-pagination" class="pagination"></div>
       </section>
 
       <footer class="page-footer">구매실적 모니터링 <span>·</span> 표시 금액은 업로드된 원본 자료 기준입니다.</footer>

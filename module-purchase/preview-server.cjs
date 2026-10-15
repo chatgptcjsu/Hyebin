@@ -41,6 +41,15 @@ function dashboard() {
   const uploaded = months.filter((item) => item.uploaded);
   const totalPlanAmount = uploaded.reduce((sum, item) => sum + item.planAmount, 0);
   const totalActualAmount = uploaded.reduce((sum, item) => sum + item.actualAmount, 0);
+  const monthlyReasons = Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1;
+    const rows = categoriesByMonth[month] || [];
+    return rows.length ? rows.map((item) => ({ month, uploaded: true, ...item })) : [{
+      month, uploaded: false, categoryName: null, planAmount: 0, actualAmount: 0,
+      planVarianceAmount: 0, previousMonthVarianceAmount: 0,
+      planVarianceReason: null, previousMonthVarianceReason: null
+    }];
+  }).flat();
   return {
     year: 2026,
     totalPlanAmount,
@@ -48,7 +57,7 @@ function dashboard() {
     totalVarianceAmount: totalActualAmount - totalPlanAmount,
     achievementRate: totalPlanAmount ? Number((totalActualAmount / totalPlanAmount * 100).toFixed(2)) : 0,
     monthly: months,
-    categoryTotals: [{ name: '기계설비공사', amount: totalActualAmount, shareRate: totalActualAmount ? 100 : 0 }]
+    monthlyReasons
   };
 }
 
@@ -65,21 +74,8 @@ const server = http.createServer((request, response) => {
     return json(response, 200, {
       year, totalPlanAmount: 0, totalActualAmount: 0, totalVarianceAmount: 0, achievementRate: 0,
       monthly: Array.from({ length: 12 }, (_, index) => ({ month: index + 1, uploaded: false, planAmount: 0, actualAmount: 0, varianceAmount: 0, achievementRate: 0 })),
-      categoryTotals: []
+      monthlyReasons: Array.from({ length: 12 }, (_, index) => ({ month: index + 1, uploaded: false, planAmount: 0, actualAmount: 0, planVarianceAmount: 0, previousMonthVarianceAmount: 0 }))
     });
-  }
-  if (request.method === 'GET' && url.pathname === '/purchase-api/details') {
-    const month = Number(url.searchParams.get('month'));
-    let rows = categoriesByMonth[month] || [];
-    if (previewUploadApplied && month === 7) rows = [{
-      categoryName: '기계설비공사', previousActualAmount: 0, planForeignAmount: 0, planDomesticAmount: 2100,
-      planAmount: 2100, actualForeignAmount: 0, actualDomesticAmount: 1890, actualAmount: 1890,
-      planVarianceAmount: -210, previousMonthVarianceAmount: 1890,
-      planVarianceReason: '샌드박스 미리보기 업로드 예시입니다.', previousMonthVarianceReason: '샌드박스 가상 데이터입니다.'
-    }];
-    const categoryName = (url.searchParams.get('categoryName') || '').toLowerCase();
-    if (categoryName) rows = rows.filter((item) => item.categoryName.toLowerCase().includes(categoryName));
-    return json(response, 200, { content: rows, page: 0, size: 50, totalElements: rows.length, totalPages: rows.length ? 1 : 0 });
   }
   if (request.method === 'POST' && url.pathname === '/purchase-api/uploads') {
     let bytes = 0;
@@ -87,6 +83,11 @@ const server = http.createServer((request, response) => {
     request.on('end', () => {
       previewUploadApplied = true;
       monthly[6] = { month: 7, uploaded: true, planAmount: 2100, actualAmount: 1890, varianceAmount: -210, achievementRate: 90 };
+      categoriesByMonth[7] = [{
+        categoryName: '기계설비공사', planAmount: 2100, actualAmount: 1890,
+        planVarianceAmount: -210, previousMonthVarianceAmount: 1890,
+        planVarianceReason: '샌드박스 미리보기 업로드 예시입니다.', previousMonthVarianceReason: '샌드박스 가상 데이터입니다.'
+      }];
       return json(response, 200, {
         uploadBatchId: 999, purchaseYear: 2026, purchaseMonth: 7, originalFilename: 'preview-upload.xlsx',
         uploadStatus: 'CURRENT', planAmount: 2100, actualAmount: 1890, summaryRowCount: 1,

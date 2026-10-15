@@ -16,11 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,8 +48,8 @@ public class PurchaseDashboardService {
         BigDecimal totalActual = BigDecimal.ZERO;
         for (int month = 1; month <= 12; month++) {
             PurchaseUploadBatch batch = activeBatches.get(month);
-            BigDecimal plan = batch == null ? BigDecimal.ZERO : batch.getPlanAmount();
-            BigDecimal actual = batch == null ? BigDecimal.ZERO : batch.getActualAmount();
+            BigDecimal plan = batch == null ? BigDecimal.ZERO : amount(batch.getPlanAmount());
+            BigDecimal actual = batch == null ? BigDecimal.ZERO : amount(batch.getActualAmount());
             totalPlan = totalPlan.add(plan);
             totalActual = totalActual.add(actual);
             months.add(PurchaseDashboardResponse.MonthPoint.builder()
@@ -66,16 +65,35 @@ public class PurchaseDashboardService {
         List<Long> batchIds = activeBatches.values().stream().map(PurchaseUploadBatch::getUploadBatchId).toList();
         List<PurchaseCategory> categories = batchIds.isEmpty() ? List.of()
             : categoryRepository.findByUploadBatchIdInAndDeletedYn(batchIds, "N");
-        Map<String, BigDecimal> categoryAmounts = new LinkedHashMap<>();
-        for (PurchaseCategory category : categories) {
-            categoryAmounts.merge(category.getCategoryName(), amount(category.getActualAmount()), BigDecimal::add);
-        }
+        Map<Long, List<PurchaseCategory>> categoriesByBatch = categories.stream()
+            .collect(Collectors.groupingBy(PurchaseCategory::getUploadBatchId));
 
-        BigDecimal denominator = totalActual;
-        List<PurchaseDashboardResponse.BreakdownItem> categoryTotals = categoryAmounts.entrySet().stream()
-            .map(entry -> breakdown(entry.getKey(), entry.getValue(), denominator))
-            .sorted(Comparator.comparing(PurchaseDashboardResponse.BreakdownItem::getAmount).reversed())
-            .toList();
+        List<PurchaseDashboardResponse.MonthlyReason> monthlyReasons = new ArrayList<>();
+        for (int month = 1; month <= 12; month++) {
+            PurchaseUploadBatch batch = activeBatches.get(month);
+            if (batch == null) {
+                monthlyReasons.add(emptyReason(month));
+                continue;
+            }
+            List<PurchaseCategory> monthCategories = categoriesByBatch.getOrDefault(batch.getUploadBatchId(), List.of());
+            if (monthCategories.isEmpty()) {
+                monthlyReasons.add(emptyReason(month));
+                continue;
+            }
+            for (PurchaseCategory category : monthCategories) {
+                monthlyReasons.add(PurchaseDashboardResponse.MonthlyReason.builder()
+                    .month(month)
+                    .uploaded(true)
+                    .categoryName(category.getCategoryName())
+                    .planAmount(amount(category.getPlanAmount()))
+                    .actualAmount(amount(category.getActualAmount()))
+                    .planVarianceAmount(amount(category.getPlanVarianceAmount()))
+                    .previousMonthVarianceAmount(amount(category.getPreviousMonthVarianceAmount()))
+                    .planVarianceReason(category.getPlanVarianceReason())
+                    .previousMonthVarianceReason(category.getPreviousMonthVarianceReason())
+                    .build());
+            }
+        }
 
         return PurchaseDashboardResponse.builder()
             .year(year)
@@ -84,15 +102,18 @@ public class PurchaseDashboardService {
             .totalVarianceAmount(totalActual.subtract(totalPlan))
             .achievementRate(rate(totalActual, totalPlan))
             .monthly(months)
-            .categoryTotals(categoryTotals)
+            .monthlyReasons(monthlyReasons)
             .build();
     }
 
-    private PurchaseDashboardResponse.BreakdownItem breakdown(String name, BigDecimal amount, BigDecimal total) {
-        return PurchaseDashboardResponse.BreakdownItem.builder()
-            .name(name)
-            .amount(amount)
-            .shareRate(rate(amount, total))
+    private PurchaseDashboardResponse.MonthlyReason emptyReason(int month) {
+        return PurchaseDashboardResponse.MonthlyReason.builder()
+            .month(month)
+            .uploaded(false)
+            .planAmount(BigDecimal.ZERO)
+            .actualAmount(BigDecimal.ZERO)
+            .planVarianceAmount(BigDecimal.ZERO)
+            .previousMonthVarianceAmount(BigDecimal.ZERO)
             .build();
     }
 

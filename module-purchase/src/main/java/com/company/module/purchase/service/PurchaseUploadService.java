@@ -1,7 +1,6 @@
 package com.company.module.purchase.service;
 
 import com.company.core.security.CurrentUserProvider;
-import com.company.module.purchase.dto.PurchaseCategoryResponse;
 import com.company.module.purchase.dto.PurchaseUploadResponse;
 import com.company.module.purchase.entity.PurchaseCategory;
 import com.company.module.purchase.entity.PurchaseMonthSnapshot;
@@ -10,9 +9,6 @@ import com.company.module.purchase.repository.PurchaseCategoryRepository;
 import com.company.module.purchase.repository.PurchaseMonthSnapshotRepository;
 import com.company.module.purchase.repository.PurchaseUploadBatchRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -113,21 +109,6 @@ public class PurchaseUploadService {
         return toResponse(batch, false, false);
     }
 
-    public Page<PurchaseCategoryResponse> detail(Integer year, Integer month, String categoryName,
-                                                 int page, int size) {
-        if (page < 0 || size < 1 || size > 200 || month < 1 || month > 12) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
-        }
-        PurchaseMonthSnapshot snapshot = snapshotRepository
-            .findByPurchaseYearAndPurchaseMonthAndDeletedYn(year, month, "N")
-            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
-        Page<PurchaseCategoryResponse> result = categoryRepository.searchCurrentBatch(
-            snapshot.getCurrentUploadBatchId(), emptyToNull(categoryName),
-            PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "sourceRowNo")))
-            .map(PurchaseCategoryResponse::from);
-        return result;
-    }
-
     private PurchaseUploadResponse toResponse(PurchaseUploadBatch batch, boolean alreadyCurrent,
                                               boolean requiresConfirmation) {
         return PurchaseUploadResponse.builder()
@@ -159,7 +140,4 @@ public class PurchaseUploadService {
         return clean.length() > 255 ? clean.substring(clean.length() - 255) : clean;
     }
 
-    private String emptyToNull(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
-    }
 }

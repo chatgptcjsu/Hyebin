@@ -15,7 +15,7 @@ public class PurchaseDashboardResponse {
     private BigDecimal totalVarianceAmount;
     private BigDecimal achievementRate;
     private List<MonthPoint> monthly;
-    private List<BreakdownItem> categoryTotals;
+    private List<MonthlyReason> monthlyReasons;
 
     @Getter
     @Builder
@@ -30,9 +30,15 @@ public class PurchaseDashboardResponse {
 
     @Getter
     @Builder
-    public static class BreakdownItem {
-        private String name;
-        private BigDecimal amount;
-        private BigDecimal shareRate;
+    public static class MonthlyReason {
+        private Integer month;
+        private boolean uploaded;
+        private String categoryName;
+        private BigDecimal planAmount;
+        private BigDecimal actualAmount;
+        private BigDecimal planVarianceAmount;
+        private BigDecimal previousMonthVarianceAmount;
+        private String planVarianceReason;
+        private String previousMonthVarianceReason;
     }
 }
