@@ -2,12 +2,16 @@ package com.company.module.purchase.service;
 
 import com.company.core.security.CurrentUserProvider;
 import com.company.module.purchase.dto.PurchaseUploadResponse;
+import com.company.module.purchase.entity.PurchaseDetailSheet;
 import com.company.module.purchase.entity.PurchaseCategory;
 import com.company.module.purchase.entity.PurchaseMonthSnapshot;
 import com.company.module.purchase.entity.PurchaseUploadBatch;
 import com.company.module.purchase.repository.PurchaseCategoryRepository;
+import com.company.module.purchase.repository.PurchaseDetailSheetRepository;
 import com.company.module.purchase.repository.PurchaseMonthSnapshotRepository;
 import com.company.module.purchase.repository.PurchaseUploadBatchRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +34,8 @@ public class PurchaseUploadService {
     private final PurchaseUploadBatchRepository batchRepository;
     private final PurchaseMonthSnapshotRepository snapshotRepository;
     private final PurchaseCategoryRepository categoryRepository;
+    private final PurchaseDetailSheetRepository detailSheetRepository;
+    private final ObjectMapper objectMapper;
     private final CurrentUserProvider currentUserProvider;
 
     @Transactional
@@ -44,6 +50,10 @@ public class PurchaseUploadService {
             PurchaseUploadBatch active = batchRepository.findById(current.getCurrentUploadBatchId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
             if (active.getFileSha256().equals(sha256)) {
+                if (parsed.detailSheet() != null
+                    && !detailSheetRepository.existsByUploadBatchIdAndDeletedYn(active.getUploadBatchId(), "N")) {
+                    saveDetailSheet(active.getUploadBatchId(), parsed.detailSheet(), currentUserProvider.getCurrentUserId());
+                }
                 return toResponse(active, true, false);
             }
             if (!confirmReplace) {
@@ -93,6 +103,9 @@ public class PurchaseUploadService {
                 .build())
             .toList();
         categoryRepository.saveAll(categories);
+        if (parsed.detailSheet() != null) {
+            saveDetailSheet(batch.getUploadBatchId(), parsed.detailSheet(), userId);
+        }
 
         if (current == null) {
             snapshotRepository.save(PurchaseMonthSnapshot.builder()
@@ -107,6 +120,19 @@ public class PurchaseUploadService {
             current.replaceBatch(batch.getUploadBatchId(), userId);
         }
         return toResponse(batch, false, false);
+    }
+
+    private void saveDetailSheet(Long batchId, ParsedPurchaseDetailSheet detailSheet, Long userId) {
+        try {
+            detailSheetRepository.save(PurchaseDetailSheet.builder()
+                .uploadBatchId(batchId)
+                .sheetName(detailSheet.sheetName())
+                .sheetDataJson(objectMapper.writeValueAsString(detailSheet))
+                .createdBy(userId)
+                .build());
+        } catch (JsonProcessingException exception) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
     }
 
     private PurchaseUploadResponse toResponse(PurchaseUploadBatch batch, boolean alreadyCurrent,

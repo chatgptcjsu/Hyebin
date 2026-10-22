@@ -55,7 +55,8 @@ public class PurchaseExcelParser {
                 || categoryActual.subtract(totalActual).abs().compareTo(AMOUNT_TOLERANCE) > 0) {
                 throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
             }
-            return new ParsedPurchaseWorkbook(period[0], period[1], totalPlan, totalActual, categories);
+            ParsedPurchaseDetailSheet detailSheet = readDetailSheet(workbook, formatter, evaluator);
+            return new ParsedPurchaseWorkbook(period[0], period[1], totalPlan, totalActual, categories, detailSheet);
         } catch (BusinessException exception) {
             throw exception;
         } catch (Exception exception) {
@@ -119,6 +120,63 @@ public class PurchaseExcelParser {
             ));
         }
         return categories;
+    }
+
+    private ParsedPurchaseDetailSheet readDetailSheet(Workbook workbook, DataFormatter formatter,
+                                                       FormulaEvaluator evaluator) {
+        if (workbook.getNumberOfSheets() < 2) return null;
+        Sheet sheet = workbook.getSheetAt(1);
+        String title = text(sheet.getRow(0) == null ? null : sheet.getRow(0).getCell(1), formatter, evaluator);
+        String sectionTitle = text(sheet.getRow(1) == null ? null : sheet.getRow(1).getCell(1), formatter, evaluator);
+        String unitLabel = text(sheet.getRow(1) == null ? null : sheet.getRow(1).getCell(14), formatter, evaluator);
+        String previousMonthLabel = text(sheet.getRow(2) == null ? null : sheet.getRow(2).getCell(6), formatter, evaluator);
+        String planMonthLabel = text(sheet.getRow(2) == null ? null : sheet.getRow(2).getCell(8), formatter, evaluator);
+        String actualMonthLabel = text(sheet.getRow(2) == null ? null : sheet.getRow(2).getCell(10), formatter, evaluator);
+
+        List<List<String>> rows = new ArrayList<>();
+        List<List<String>> summaryRows = new ArrayList<>();
+        List<String> mainIssues = new ArrayList<>();
+        List<String> futureImprovements = new ArrayList<>();
+        boolean readingMainIssues = false;
+        boolean readingImprovements = false;
+        int lastRow = Math.min(sheet.getLastRowNum(), MAX_ROWS);
+        for (int rowIndex = 0; rowIndex <= lastRow; rowIndex++) {
+            Row row = sheet.getRow(rowIndex);
+            if (row == null) continue;
+            String label = normalize(text(row.getCell(1), formatter, evaluator));
+            if (label.startsWith("[주요 Issue")) {
+                readingMainIssues = true;
+                readingImprovements = false;
+                continue;
+            }
+            if (label.startsWith("[향후 개선")) {
+                readingMainIssues = false;
+                readingImprovements = true;
+                continue;
+            }
+            if (readingMainIssues || readingImprovements) {
+                if (!label.isBlank()) {
+                    (readingMainIssues ? mainIssues : futureImprovements).add(label);
+                }
+                continue;
+            }
+            if (rowIndex < 4 || label.isBlank()) continue;
+
+            List<String> values = new ArrayList<>(14);
+            for (int column = 1; column <= 14; column++) {
+                values.add(text(row.getCell(column), formatter, evaluator));
+            }
+            if ("내자 합계".equals(label) || "외자 합계".equals(label) || "합계".equals(label)) {
+                summaryRows.add(values);
+            } else if (!label.startsWith("[")) {
+                rows.add(values);
+            }
+        }
+        if (rows.isEmpty() && summaryRows.isEmpty()) return null;
+        return new ParsedPurchaseDetailSheet(
+            sheet.getSheetName(), title, sectionTitle, unitLabel, previousMonthLabel, planMonthLabel,
+            actualMonthLabel, rows, summaryRows, mainIssues, futureImprovements
+        );
     }
 
     private java.util.Optional<BigDecimal> readTotalAmount(Sheet sheet, DataFormatter formatter,

@@ -31,12 +31,15 @@ async function requestJson(url, options = {}) {
   return body && Object.prototype.hasOwnProperty.call(body, 'data') ? body.data : body;
 }
 
-function focusMonth(month) {
-  const row = document.querySelector(`#reason-body tr[data-month="${month}"]`);
-  if (!row) return;
-  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  row.classList.add('is-focused');
-  window.setTimeout(() => row.classList.remove('is-focused'), 1800);
+function openDetailSheet(month) {
+  const query = new URLSearchParams({ year: yearSelect.value, month: String(month) });
+  const windowName = `purchase-detail-${yearSelect.value}-${month}`;
+  const detailWindow = window.open(
+    `/purchase/detail-sheet.html?${query.toString()}`,
+    windowName,
+    'popup=yes,width=1600,height=1000,resizable=yes,scrollbars=yes'
+  );
+  if (!detailWindow) showNotice('상세 창이 차단되었습니다. 브라우저에서 팝업을 허용해 주세요.', 'error');
 }
 
 function renderMonthlySummary(points, totals = {}) {
@@ -49,7 +52,7 @@ function renderMonthlySummary(points, totals = {}) {
   document.getElementById('coverage-label').textContent = uploaded.length ? `${uploaded.length}/12개월 자료` : '자료 없음';
   root.innerHTML = (points || []).map((point) => {
     const variance = roundToWhole(point.varianceAmount);
-    return `<tr class="monthly-summary-row${point.uploaded ? '' : ' is-unuploaded'}" data-month="${point.month}" ${point.uploaded ? 'tabindex="0" role="button"' : ''}>
+    return `<tr class="monthly-summary-row${point.uploaded ? '' : ' is-unuploaded'}" data-month="${point.month}" ${point.uploaded ? 'tabindex="0" role="link" aria-haspopup="window" title="클릭하면 업체별 상세 시트를 새 창으로 엽니다"' : ''}>
       <td>${point.month}월</td>
       <td class="number-cell">${point.uploaded ? money(point.planAmount) : '—'}</td>
       <td class="number-cell">${point.uploaded ? money(point.actualAmount) : '—'}</td>
@@ -58,11 +61,11 @@ function renderMonthlySummary(points, totals = {}) {
     </tr>`;
   }).join('') + `<tr class="annual-total-row"><th>누계</th><th class="number-cell">${money(totalPlan)}</th><th class="number-cell">${money(totalActual)}</th><th class="number-cell">${pct(totalRate)}</th><th class="number-cell ${roundToWhole(totalVariance) > 0 ? 'text-positive' : roundToWhole(totalVariance) < 0 ? 'text-negative' : ''}">${roundToWhole(totalVariance) > 0 ? '+' : ''}${money(totalVariance)}</th></tr>`;
   root.querySelectorAll('.monthly-summary-row:not(.is-unuploaded)').forEach((row) => {
-    row.addEventListener('click', () => focusMonth(row.dataset.month));
+    row.addEventListener('click', () => openDetailSheet(row.dataset.month));
     row.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        focusMonth(row.dataset.month);
+        openDetailSheet(row.dataset.month);
       }
     });
   });
@@ -98,11 +101,11 @@ function renderMonthlyGraph(points) {
   root.innerHTML = `<svg viewBox="0 0 1000 320" role="img" aria-label="월별 계획과 실적 꺾은선 그래프" preserveAspectRatio="none">
     ${grid}<path d="${makePath('planAmount')}" class="trend-line plan-trend"/><path d="${makePath('actualAmount')}" class="trend-line actual-trend"/>${markers}${labels}</svg>`;
   root.querySelectorAll('.graph-month-point').forEach((point) => {
-    point.addEventListener('click', () => focusMonth(point.dataset.month));
+    point.addEventListener('click', () => openDetailSheet(point.dataset.month));
     point.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        focusMonth(point.dataset.month);
+        openDetailSheet(point.dataset.month);
       }
     });
   });

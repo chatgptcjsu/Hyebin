@@ -2,8 +2,10 @@ package com.company.module.purchase.controller;
 
 import com.company.core.common.response.ApiResponse;
 import com.company.module.purchase.dto.PurchaseDashboardResponse;
+import com.company.module.purchase.dto.PurchaseDetailSheetResponse;
 import com.company.module.purchase.dto.PurchaseUploadResponse;
 import com.company.module.purchase.service.PurchaseDashboardService;
+import com.company.module.purchase.service.PurchaseDetailSheetService;
 import com.company.module.purchase.service.PurchaseUploadService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -27,6 +29,7 @@ public class PurchaseController {
 
     private final PurchaseUploadService uploadService;
     private final PurchaseDashboardService dashboardService;
+    private final PurchaseDetailSheetService detailSheetService;
 
     @PostMapping("/uploads")
     @PreAuthorize("hasAuthority('PURCHASE_WRITE')")
@@ -41,6 +44,14 @@ public class PurchaseController {
     public ResponseEntity<ApiResponse<PurchaseDashboardResponse>> dashboard(
             @RequestParam("year") @Min(2000) @Max(2200) Integer year) {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getDashboard(year)));
+    }
+
+    @GetMapping("/detail-sheet")
+    @PreAuthorize("hasAuthority('PURCHASE_READ')")
+    public ResponseEntity<ApiResponse<PurchaseDetailSheetResponse>> detailSheet(
+            @RequestParam("year") @Min(2000) @Max(2200) Integer year,
+            @RequestParam("month") @Min(1) @Max(12) Integer month) {
+        return ResponseEntity.ok(ApiResponse.success(detailSheetService.getCurrentSheet(year, month)));
     }
 
 }

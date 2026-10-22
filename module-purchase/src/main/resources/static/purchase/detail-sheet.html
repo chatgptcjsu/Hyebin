@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="월별 구매실적 Excel 두 번째 시트 상세 내역">
+  <title>월별 구매실적 상세</title>
+  <link rel="stylesheet" href="/purchase/detail-sheet.css">
+</head>
+<body>
+  <div class="detail-app">
+    <header class="detail-header">
+      <div>
+        <p class="eyebrow">MONTHLY SOURCE SHEET</p>
+        <h1 id="sheet-title">월별 구매실적 상세</h1>
+        <p id="sheet-subtitle" class="subtitle">Excel 두 번째 시트 자료</p>
+      </div>
+      <div class="header-actions">
+        <span class="unit-label">단위: 백만원 · VAT 별도</span>
+        <button id="print-button" type="button">인쇄</button>
+        <button id="close-button" type="button">창 닫기</button>
+      </div>
+    </header>
+
+    <div id="sheet-status" class="status" role="status" aria-live="polite">상세 시트를 불러오는 중입니다.</div>
+
+    <main id="sheet-content" hidden>
+      <section class="sheet-panel" aria-labelledby="sheet-section-title">
+        <div class="sheet-caption">
+          <div>
+            <p class="sheet-kicker">SOURCE WORKSHEET</p>
+            <h2 id="sheet-section-title"></h2>
+          </div>
+          <span id="sheet-unit" class="sheet-unit"></span>
+        </div>
+        <div class="table-instruction">표를 좌우로 이동해 전체 내역을 확인할 수 있습니다.</div>
+        <div class="table-scroll" tabindex="0" aria-label="업체별 구매실적 상세 표, 좌우 스크롤 가능">
+          <table class="source-table">
+            <colgroup>
+              <col class="item-col"><col class="division-col"><col class="trade-col"><col class="code-col"><col class="unit-col">
+              <col class="qty-col"><col class="amount-col"><col class="qty-col"><col class="amount-col">
+              <col class="qty-col"><col class="amount-col"><col class="note-col"><col class="vendor-col"><col class="variance-col">
+            </colgroup>
+            <thead>
+              <tr>
+                <th rowspan="2">공급품목</th><th rowspan="2">사업부</th><th rowspan="2">내/외자구분</th><th rowspan="2">업체코드</th><th rowspan="2">단위</th>
+                <th id="previous-period" colspan="2"></th><th id="plan-period" colspan="2"></th><th id="actual-period" colspan="2"></th>
+                <th rowspan="2">비고</th><th rowspan="2">협력업체명</th><th rowspan="2">계획대비</th>
+              </tr>
+              <tr><th>수량</th><th>금액</th><th>수량</th><th>금액</th><th>수량</th><th>금액</th></tr>
+            </thead>
+            <tbody id="detail-rows"></tbody>
+            <tfoot id="summary-rows"></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <div class="note-grid">
+        <section class="note-panel" aria-labelledby="issues-heading">
+          <h2 id="issues-heading">주요 Issue 사항</h2>
+          <ol id="main-issues"></ol>
+          <p id="no-issues" class="empty-note" hidden>기재된 이슈가 없습니다.</p>
+        </section>
+        <section class="note-panel" aria-labelledby="improvements-heading">
+          <h2 id="improvements-heading">향후 개선 방향</h2>
+          <ul id="future-improvements"></ul>
+          <p id="no-improvements" class="empty-note" hidden>기재된 개선 방향이 없습니다.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script src="/purchase/detail-sheet.js" defer></script>
+</body>
+</html>
