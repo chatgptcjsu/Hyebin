@@ -2,7 +2,7 @@ const apiRoot = '/purchase-api';
 const yearSelect = document.getElementById('year-select');
 const notice = document.getElementById('notice');
 
-const money = (value) => new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 1 }).format(Number(value || 0));
+const money = (value, maximumFractionDigits = 9) => new Intl.NumberFormat('ko-KR', { maximumFractionDigits }).format(Number(value || 0));
 const pct = (value) => `${Number(value || 0).toFixed(1)}%`;
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
@@ -34,13 +34,13 @@ function focusMonth(month) {
   window.setTimeout(() => row.classList.remove('is-focused'), 1800);
 }
 
-function renderMonthlySummary(points) {
+function renderMonthlySummary(points, totals = {}) {
   const root = document.getElementById('monthly-summary-body');
   const uploaded = (points || []).filter((point) => point.uploaded);
-  const totalPlan = uploaded.reduce((sum, point) => sum + Number(point.planAmount || 0), 0);
-  const totalActual = uploaded.reduce((sum, point) => sum + Number(point.actualAmount || 0), 0);
-  const totalRate = totalPlan ? totalActual / totalPlan * 100 : 0;
-  const totalVariance = totalActual - totalPlan;
+  const totalPlan = Number(totals.totalPlanAmount ?? uploaded.reduce((sum, point) => sum + Number(point.planAmount || 0), 0));
+  const totalActual = Number(totals.totalActualAmount ?? uploaded.reduce((sum, point) => sum + Number(point.actualAmount || 0), 0));
+  const totalRate = Number(totals.achievementRate ?? (totalPlan ? totalActual / totalPlan * 100 : 0));
+  const totalVariance = Number(totals.totalVarianceAmount ?? (totalActual - totalPlan));
   document.getElementById('coverage-label').textContent = uploaded.length ? `${uploaded.length}/12개월 자료` : '자료 없음';
   root.innerHTML = (points || []).map((point) => {
     const variance = Number(point.varianceAmount || 0);
@@ -86,7 +86,7 @@ function renderMonthlyGraph(points) {
   const grid = [0, 1, 2, 3, 4].map((tick) => {
     const value = maxAmount * (1 - tick / 4);
     const yy = top + (bottom - top) * tick / 4;
-    return `<line x1="${left}" x2="${right}" y1="${yy}" y2="${yy}" class="chart-gridline"/><text x="${left - 9}" y="${yy + 4}" text-anchor="end" class="axis-label">${money(value)}</text>`;
+    return `<line x1="${left}" x2="${right}" y1="${yy}" y2="${yy}" class="chart-gridline"/><text x="${left - 9}" y="${yy + 4}" text-anchor="end" class="axis-label">${money(value, 1)}</text>`;
   }).join('');
   const labels = Array.from({ length: 12 }, (_, index) => `<text x="${x(index + 1)}" y="${bottom + 25}" text-anchor="middle" class="axis-label">${index + 1}월</text>`).join('');
   const markers = uploaded.map((point) => `<g class="graph-month-point" data-month="${point.month}" tabindex="0" role="button" aria-label="${point.month}월 상세 사유로 이동"><circle cx="${x(point.month)}" cy="${y(point.planAmount)}" r="5" class="trend-point plan-point"><title>${point.month}월 계획 ${money(point.planAmount)}백만원</title></circle><circle cx="${x(point.month)}" cy="${y(point.actualAmount)}" r="5" class="trend-point actual-point"><title>${point.month}월 실적 ${money(point.actualAmount)}백만원</title></circle></g>`).join('');
@@ -133,7 +133,7 @@ async function loadDashboard() {
   try {
     showNotice('', 'info');
     const data = await requestJson(`${apiRoot}/dashboard?year=${encodeURIComponent(yearSelect.value)}`);
-    renderMonthlySummary(data.monthly || []);
+    renderMonthlySummary(data.monthly || [], data);
     renderMonthlyGraph(data.monthly || []);
     renderMonthlyReasons(data.monthlyReasons || [], data.year || yearSelect.value);
   } catch (error) {

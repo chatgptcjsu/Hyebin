@@ -1,4 +1,4 @@
-// Local-only preview harness. Uses first-sheet sample data and never writes to MariaDB.
+// Local-only read-only preview harness. Real uploads are processed by the integrated Spring API.
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -30,8 +30,6 @@ const categoriesByMonth = {
   5: [{ categoryName: '기계설비공사', previousActualAmount: 3953.621182, planForeignAmount: 0, planDomesticAmount: 241.116222, planAmount: 241.116222, actualForeignAmount: 0, actualDomesticAmount: 325.15, actualAmount: 325.15, planVarianceAmount: 84.033778, previousMonthVarianceAmount: -3628.471182, planVarianceReason: '지붕 보수공사와 에너지 재활용 시설 소방공사 잔금 반영으로 계획 대비 증가', previousMonthVarianceReason: '전월 대규모 시설 기성금이 반영되어 전월 대비 감소' }],
   6: [{ categoryName: '기계설비공사', previousActualAmount: 325.15, planForeignAmount: 0, planDomesticAmount: 1870, planAmount: 1870, actualForeignAmount: 0, actualDomesticAmount: 2106.366222, actualAmount: 2106.366222, planVarianceAmount: 236.366222, previousMonthVarianceAmount: 1781.216222, planVarianceReason: '태양광 발전설비 잔금과 계획 외 환경개선 공사 대금 반영으로 계획 대비 증가', previousMonthVarianceReason: '에너지 재활용 시설 14차 기성금과 태양광 설비 잔금 반영으로 전월 대비 증가' }]
 };
-let previewUploadApplied = false;
-
 function currentMonths() {
   return monthly.map((item) => ({ ...item }));
 }
@@ -78,22 +76,10 @@ const server = http.createServer((request, response) => {
     });
   }
   if (request.method === 'POST' && url.pathname === '/purchase-api/uploads') {
-    let bytes = 0;
-    request.on('data', (chunk) => { bytes += chunk.length; if (bytes > 21 * 1024 * 1024) request.destroy(); });
-    request.on('end', () => {
-      previewUploadApplied = true;
-      monthly[6] = { month: 7, uploaded: true, planAmount: 2100, actualAmount: 1890, varianceAmount: -210, achievementRate: 90 };
-      categoriesByMonth[7] = [{
-        categoryName: '기계설비공사', planAmount: 2100, actualAmount: 1890,
-        planVarianceAmount: -210, previousMonthVarianceAmount: 1890,
-        planVarianceReason: '샌드박스 미리보기 업로드 예시입니다.', previousMonthVarianceReason: '샌드박스 가상 데이터입니다.'
-      }];
-      return json(response, 200, {
-        uploadBatchId: 999, purchaseYear: 2026, purchaseMonth: 7, originalFilename: 'preview-upload.xlsx',
-        uploadStatus: 'CURRENT', planAmount: 2100, actualAmount: 1890, summaryRowCount: 1,
-        alreadyCurrent: false, requiresReplacementConfirmation: false
-      });
-    });
+    response.writeHead(501, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+    response.end(JSON.stringify({
+      message: '이 미리보기는 읽기 전용입니다. 실제 Excel 업로드는 기존 플랫폼의 Spring API와 MariaDB에 연결된 화면에서 처리해 주세요.'
+    }));
     return;
   }
   if (request.method === 'GET' && url.pathname === '/favicon.ico') {
@@ -114,7 +100,7 @@ const server = http.createServer((request, response) => {
       if (ext === '.html') {
         content = Buffer.from(content.toString('utf8').replace(
           '<div id="notice" class="notice" role="status" aria-live="polite" hidden></div>',
-          '<div class="notice info" role="status">샌드박스 미리보기 · 실제 엑셀 데이터 미리보기 · 업로드는 가상 반영입니다.</div><div id="notice" class="notice" role="status" aria-live="polite" hidden></div>'
+          '<div class="notice info" role="status">읽기 전용 미리보기 · 예시 데이터 표시 중 · 실제 업로드는 통합 Spring API에서 처리됩니다.</div><div id="notice" class="notice" role="status" aria-live="polite" hidden></div>'
         ));
       }
       response.writeHead(200, { 'content-type': mime, 'cache-control': 'no-store' });

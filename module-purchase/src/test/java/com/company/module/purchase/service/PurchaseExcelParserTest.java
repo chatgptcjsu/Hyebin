@@ -31,6 +31,18 @@ class PurchaseExcelParserTest {
     }
 
     @Test
+    void takesYearAndMonthFromFilenameWhenItContainsReportingPeriod() throws Exception {
+        MockMultipartFile file = workbook("2026년 9월 구매실적자료.xlsx", "2026년 1월 구매실적",
+            new BigDecimal("897.7069"), new BigDecimal("682.606"),
+            new BigDecimal("897.7069"), new BigDecimal("682.606"));
+
+        ParsedPurchaseWorkbook result = parser.parse(file);
+
+        assertEquals(2026, result.purchaseYear());
+        assertEquals(9, result.purchaseMonth());
+    }
+
+    @Test
     void rejectsWorkbookWhenSummaryAndCategoryAmountsDoNotMatch() throws Exception {
         MockMultipartFile file = workbook("2026년 1월 구매실적", new BigDecimal("100"), new BigDecimal("50"),
             new BigDecimal("99"), new BigDecimal("49"));
@@ -39,6 +51,11 @@ class PurchaseExcelParserTest {
     }
 
     private MockMultipartFile workbook(String title, BigDecimal totalPlan, BigDecimal totalActual,
+                                       BigDecimal categoryPlan, BigDecimal categoryActual) throws Exception {
+        return workbook("purchase.xlsx", title, totalPlan, totalActual, categoryPlan, categoryActual);
+    }
+
+    private MockMultipartFile workbook(String filename, String title, BigDecimal totalPlan, BigDecimal totalActual,
                                        BigDecimal categoryPlan, BigDecimal categoryActual) throws Exception {
         try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             var summary = workbook.createSheet("구매실적요약");
@@ -65,7 +82,7 @@ class PurchaseExcelParserTest {
             ignoredSecondSheet.createRow(0).createCell(0).setCellValue("이 시트는 읽으면 안 됨");
 
             workbook.write(output);
-            return new MockMultipartFile("file", "purchase.xlsx",
+            return new MockMultipartFile("file", filename,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", output.toByteArray());
         }
     }

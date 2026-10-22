@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 public class PurchaseExcelParser {
 
     private static final String TOTAL_LABEL = "합계";
-    private static final Pattern PERIOD_PATTERN = Pattern.compile("(?:'|20)?(\\d{2,4})년\\s*(\\d{1,2})월");
+    private static final Pattern PERIOD_PATTERN = Pattern.compile("['’]?(\\d{2}|\\d{4})년\\s*(\\d{1,2})월");
     private static final BigDecimal AMOUNT_TOLERANCE = new BigDecimal("0.01");
     private static final int MAX_ROWS = 20_000;
 
@@ -39,7 +39,7 @@ public class PurchaseExcelParser {
             Sheet firstSheet = workbook.getSheetAt(0);
             FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
             DataFormatter formatter = new DataFormatter();
-            int[] period = readPeriod(firstSheet, formatter, evaluator);
+            int[] period = readPeriod(file.getOriginalFilename(), firstSheet, formatter, evaluator);
             List<ParsedPurchaseCategory> categories = readCategories(firstSheet, formatter, evaluator);
             if (categories.isEmpty()) {
                 throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
@@ -63,20 +63,31 @@ public class PurchaseExcelParser {
         }
     }
 
-    private int[] readPeriod(Sheet sheet, DataFormatter formatter, FormulaEvaluator evaluator) {
+    private int[] readPeriod(String filename, Sheet sheet, DataFormatter formatter, FormulaEvaluator evaluator) {
+        int[] filenamePeriod = findPeriod(filename);
+        if (filenamePeriod != null) return filenamePeriod;
+
         for (int rowIndex = 0; rowIndex < Math.min(sheet.getLastRowNum() + 1, 8); rowIndex++) {
             Row row = sheet.getRow(rowIndex);
             String title = text(row == null ? null : row.getCell(0), formatter, evaluator);
-            Matcher matcher = PERIOD_PATTERN.matcher(title);
-            if (matcher.find()) {
-                int year = Integer.parseInt(matcher.group(1));
-                if (year < 100) year += 2000;
-                int month = Integer.parseInt(matcher.group(2));
-                if (month < 1 || month > 12 || year < 2000 || year > 2200) break;
-                return new int[]{year, month};
-            }
+            int[] titlePeriod = findPeriod(title);
+            if (titlePeriod != null) return titlePeriod;
         }
         throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    private int[] findPeriod(String value) {
+        if (value == null || value.isBlank()) return null;
+        Matcher matcher = PERIOD_PATTERN.matcher(value);
+        if (!matcher.find()) return null;
+
+        int year = Integer.parseInt(matcher.group(1));
+        if (year < 100) year += 2000;
+        int month = Integer.parseInt(matcher.group(2));
+        if (month < 1 || month > 12 || year < 2000 || year > 2200) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        return new int[]{year, month};
     }
 
     private List<ParsedPurchaseCategory> readCategories(Sheet sheet, DataFormatter formatter,
