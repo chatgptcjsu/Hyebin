@@ -8,7 +8,6 @@ const roundToWhole = (value) => {
   return Number.isFinite(number) ? Math.sign(number) * Math.floor(Math.abs(number) + 0.5) : 0;
 };
 const money = (value) => wholeNumberFormat.format(roundToWhole(value));
-const pct = (value) => `${wholeNumberFormat.format(roundToWhole(value))}%`;
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
 function showNotice(message, kind = 'info') {
@@ -47,19 +46,20 @@ function renderMonthlySummary(points, totals = {}) {
   const uploaded = (points || []).filter((point) => point.uploaded);
   const totalPlan = Number(totals.totalPlanAmount ?? uploaded.reduce((sum, point) => sum + Number(point.planAmount || 0), 0));
   const totalActual = Number(totals.totalActualAmount ?? uploaded.reduce((sum, point) => sum + Number(point.actualAmount || 0), 0));
-  const totalRate = Number(totals.achievementRate ?? (totalPlan ? totalActual / totalPlan * 100 : 0));
-  const totalVariance = Number(totals.totalVarianceAmount ?? (totalActual - totalPlan));
+  const totalPlanVariance = Number(totals.totalVarianceAmount ?? (totalActual - totalPlan));
+  const totalPreviousVariance = Number(totals.totalPreviousMonthVarianceAmount ?? (points || []).reduce((sum, point) => sum + Number(point.previousMonthVarianceAmount || 0), 0));
   document.getElementById('coverage-label').textContent = uploaded.length ? `${uploaded.length}/12개월 자료` : '자료 없음';
   root.innerHTML = (points || []).map((point) => {
-    const variance = roundToWhole(point.varianceAmount);
+    const planVariance = roundToWhole(point.varianceAmount);
+    const previousVariance = roundToWhole(point.previousMonthVarianceAmount);
     return `<tr class="monthly-summary-row${point.uploaded ? '' : ' is-unuploaded'}" data-month="${point.month}" ${point.uploaded ? `tabindex="0" role="link" aria-label="${yearSelect.value}년 ${point.month}월 상세 시트를 새 창으로 엽니다" title="클릭하면 업체별 상세 시트를 새 창으로 엽니다"` : ''}>
       <td>${point.month}월</td>
       <td class="number-cell">${point.uploaded ? money(point.planAmount) : '—'}</td>
       <td class="number-cell">${point.uploaded ? money(point.actualAmount) : '—'}</td>
-      <td class="number-cell">${point.uploaded ? pct(point.achievementRate) : '—'}</td>
-      <td class="number-cell ${variance > 0 ? 'text-positive' : variance < 0 ? 'text-negative' : ''}">${point.uploaded ? `${variance > 0 ? '+' : ''}${money(variance)}` : '—'}</td>
+      <td class="number-cell ${planVariance > 0 ? 'text-positive' : planVariance < 0 ? 'text-negative' : ''}">${point.uploaded ? `${planVariance > 0 ? '+' : ''}${money(planVariance)}` : '—'}</td>
+      <td class="number-cell ${previousVariance > 0 ? 'text-positive' : previousVariance < 0 ? 'text-negative' : ''}">${point.uploaded ? `${previousVariance > 0 ? '+' : ''}${money(previousVariance)}` : '—'}</td>
     </tr>`;
-  }).join('') + `<tr class="annual-total-row"><th>누계</th><th class="number-cell">${money(totalPlan)}</th><th class="number-cell">${money(totalActual)}</th><th class="number-cell">${pct(totalRate)}</th><th class="number-cell ${roundToWhole(totalVariance) > 0 ? 'text-positive' : roundToWhole(totalVariance) < 0 ? 'text-negative' : ''}">${roundToWhole(totalVariance) > 0 ? '+' : ''}${money(totalVariance)}</th></tr>`;
+  }).join('') + `<tr class="annual-total-row"><th>누계</th><th class="number-cell">${money(totalPlan)}</th><th class="number-cell">${money(totalActual)}</th><th class="number-cell ${roundToWhole(totalPlanVariance) > 0 ? 'text-positive' : roundToWhole(totalPlanVariance) < 0 ? 'text-negative' : ''}">${roundToWhole(totalPlanVariance) > 0 ? '+' : ''}${money(totalPlanVariance)}</th><th class="number-cell ${roundToWhole(totalPreviousVariance) > 0 ? 'text-positive' : roundToWhole(totalPreviousVariance) < 0 ? 'text-negative' : ''}">${roundToWhole(totalPreviousVariance) > 0 ? '+' : ''}${money(totalPreviousVariance)}</th></tr>`;
   root.querySelectorAll('.monthly-summary-row:not(.is-unuploaded)').forEach((row) => {
     row.addEventListener('click', () => openDetailSheet(row.dataset.month));
     row.addEventListener('keydown', (event) => {

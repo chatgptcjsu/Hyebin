@@ -43,30 +43,38 @@ public class PurchaseDashboardService {
             activeBatches.put(snapshot.getPurchaseMonth(), batch);
         }
 
+        List<Long> batchIds = activeBatches.values().stream().map(PurchaseUploadBatch::getUploadBatchId).toList();
+        List<PurchaseCategory> categories = batchIds.isEmpty() ? List.of()
+            : categoryRepository.findByUploadBatchIdInAndDeletedYn(batchIds, "N");
+        Map<Long, List<PurchaseCategory>> categoriesByBatch = categories.stream()
+            .collect(Collectors.groupingBy(PurchaseCategory::getUploadBatchId));
+
         List<PurchaseDashboardResponse.MonthPoint> months = new ArrayList<>();
         BigDecimal totalPlan = BigDecimal.ZERO;
         BigDecimal totalActual = BigDecimal.ZERO;
+        BigDecimal totalPreviousMonthVariance = BigDecimal.ZERO;
         for (int month = 1; month <= 12; month++) {
             PurchaseUploadBatch batch = activeBatches.get(month);
             BigDecimal plan = batch == null ? BigDecimal.ZERO : amount(batch.getPlanAmount());
             BigDecimal actual = batch == null ? BigDecimal.ZERO : amount(batch.getActualAmount());
+            List<PurchaseCategory> monthCategories = batch == null ? List.of()
+                : categoriesByBatch.getOrDefault(batch.getUploadBatchId(), List.of());
+            BigDecimal previousMonthVariance = monthCategories.stream()
+                .map(category -> amount(category.getPreviousMonthVarianceAmount()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
             totalPlan = totalPlan.add(plan);
             totalActual = totalActual.add(actual);
+            totalPreviousMonthVariance = totalPreviousMonthVariance.add(previousMonthVariance);
             months.add(PurchaseDashboardResponse.MonthPoint.builder()
                 .month(month)
                 .uploaded(batch != null)
                 .planAmount(plan)
                 .actualAmount(actual)
                 .varianceAmount(actual.subtract(plan))
+                .previousMonthVarianceAmount(previousMonthVariance)
                 .achievementRate(rate(actual, plan))
                 .build());
         }
-
-        List<Long> batchIds = activeBatches.values().stream().map(PurchaseUploadBatch::getUploadBatchId).toList();
-        List<PurchaseCategory> categories = batchIds.isEmpty() ? List.of()
-            : categoryRepository.findByUploadBatchIdInAndDeletedYn(batchIds, "N");
-        Map<Long, List<PurchaseCategory>> categoriesByBatch = categories.stream()
-            .collect(Collectors.groupingBy(PurchaseCategory::getUploadBatchId));
 
         List<PurchaseDashboardResponse.MonthlyReason> monthlyReasons = new ArrayList<>();
         for (int month = 1; month <= 12; month++) {
@@ -100,6 +108,7 @@ public class PurchaseDashboardService {
             .totalPlanAmount(totalPlan)
             .totalActualAmount(totalActual)
             .totalVarianceAmount(totalActual.subtract(totalPlan))
+            .totalPreviousMonthVarianceAmount(totalPreviousMonthVariance)
             .achievementRate(rate(totalActual, totalPlan))
             .monthly(months)
             .monthlyReasons(monthlyReasons)

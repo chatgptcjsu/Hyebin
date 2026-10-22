@@ -13,6 +13,7 @@ public class PurchaseDashboardResponse {
     private BigDecimal totalPlanAmount;
     private BigDecimal totalActualAmount;
     private BigDecimal totalVarianceAmount;
+    private BigDecimal totalPreviousMonthVarianceAmount;
     private BigDecimal achievementRate;
     private List<MonthPoint> monthly;
     private List<MonthlyReason> monthlyReasons;
@@ -25,6 +26,7 @@ public class PurchaseDashboardResponse {
         private BigDecimal planAmount;
         private BigDecimal actualAmount;
         private BigDecimal varianceAmount;
+        private BigDecimal previousMonthVarianceAmount;
         private BigDecimal achievementRate;
     }
 
