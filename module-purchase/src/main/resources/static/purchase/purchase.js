@@ -8,7 +8,7 @@ const roundToWhole = (value) => {
   return Number.isFinite(number) ? Math.sign(number) * Math.floor(Math.abs(number) + 0.5) : 0;
 };
 const money = (value) => wholeNumberFormat.format(roundToWhole(value));
-const pct = (value) => `${Number(value || 0).toFixed(1)}%`;
+const pct = (value) => `${wholeNumberFormat.format(roundToWhole(value))}%`;
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
 function showNotice(message, kind = 'info') {
