@@ -32,14 +32,14 @@ public class PurchaseController {
     @PreAuthorize("hasAuthority('PURCHASE_WRITE')")
     public ResponseEntity<ApiResponse<PurchaseUploadResponse>> upload(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(defaultValue = "false") boolean confirmReplace) {
+            @RequestParam(name = "confirmReplace", defaultValue = "false") boolean confirmReplace) {
         return ResponseEntity.ok(ApiResponse.success(uploadService.upload(file, confirmReplace)));
     }
 
     @GetMapping("/dashboard")
     @PreAuthorize("hasAuthority('PURCHASE_READ')")
     public ResponseEntity<ApiResponse<PurchaseDashboardResponse>> dashboard(
-            @RequestParam @Min(2000) @Max(2200) Integer year) {
+            @RequestParam("year") @Min(2000) @Max(2200) Integer year) {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getDashboard(year)));
     }
 

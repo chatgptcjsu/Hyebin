@@ -36,31 +36,31 @@ public class PurchaseCategory {
     @Column(name = "CATEGORY_NAME", nullable = false, length = 100)
     private String categoryName;
 
-    @Column(name = "PREVIOUS_ACTUAL_AMOUNT", precision = 18, scale = 6)
+    @Column(name = "PREVIOUS_ACTUAL_AMOUNT", precision = 24, scale = 10)
     private BigDecimal previousActualAmount;
 
-    @Column(name = "PLAN_FOREIGN_AMOUNT", precision = 18, scale = 6)
+    @Column(name = "PLAN_FOREIGN_AMOUNT", precision = 24, scale = 10)
     private BigDecimal planForeignAmount;
 
-    @Column(name = "PLAN_DOMESTIC_AMOUNT", precision = 18, scale = 6)
+    @Column(name = "PLAN_DOMESTIC_AMOUNT", precision = 24, scale = 10)
     private BigDecimal planDomesticAmount;
 
-    @Column(name = "PLAN_AMOUNT", precision = 18, scale = 6)
+    @Column(name = "PLAN_AMOUNT", precision = 24, scale = 10)
     private BigDecimal planAmount;
 
-    @Column(name = "ACTUAL_FOREIGN_AMOUNT", precision = 18, scale = 6)
+    @Column(name = "ACTUAL_FOREIGN_AMOUNT", precision = 24, scale = 10)
     private BigDecimal actualForeignAmount;
 
-    @Column(name = "ACTUAL_DOMESTIC_AMOUNT", precision = 18, scale = 6)
+    @Column(name = "ACTUAL_DOMESTIC_AMOUNT", precision = 24, scale = 10)
     private BigDecimal actualDomesticAmount;
 
-    @Column(name = "ACTUAL_AMOUNT", precision = 18, scale = 6)
+    @Column(name = "ACTUAL_AMOUNT", precision = 24, scale = 10)
     private BigDecimal actualAmount;
 
-    @Column(name = "PLAN_VARIANCE_AMOUNT", precision = 18, scale = 6)
+    @Column(name = "PLAN_VARIANCE_AMOUNT", precision = 24, scale = 10)
     private BigDecimal planVarianceAmount;
 
-    @Column(name = "PREVIOUS_MONTH_VARIANCE_AMOUNT", precision = 18, scale = 6)
+    @Column(name = "PREVIOUS_MONTH_VARIANCE_AMOUNT", precision = 24, scale = 10)
     private BigDecimal previousMonthVarianceAmount;
 
     @Column(name = "PLAN_VARIANCE_REASON", columnDefinition = "TEXT")
@@ -81,7 +81,7 @@ public class PurchaseCategory {
     @Column(name = "UPDATED_BY")
     private Long updatedBy;
 
-    @Column(name = "DELETED_YN", nullable = false, length = 1)
+    @Column(name = "DELETED_YN", nullable = false, length = 1, columnDefinition = "CHAR(1)")
     private String deletedYn;
 
     @Column(name = "DELETED_AT")

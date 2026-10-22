@@ -36,16 +36,16 @@ public class PurchaseUploadBatch {
     @Column(name = "ORIGINAL_FILENAME", nullable = false, length = 255)
     private String originalFilename;
 
-    @Column(name = "FILE_SHA256", nullable = false, length = 64)
+    @Column(name = "FILE_SHA256", nullable = false, length = 64, columnDefinition = "CHAR(64)")
     private String fileSha256;
 
     @Column(name = "UPLOAD_STATUS", nullable = false, length = 20)
     private String uploadStatus;
 
-    @Column(name = "PLAN_AMOUNT", nullable = false, precision = 18, scale = 6)
+    @Column(name = "PLAN_AMOUNT", nullable = false, precision = 24, scale = 10)
     private BigDecimal planAmount;
 
-    @Column(name = "ACTUAL_AMOUNT", nullable = false, precision = 18, scale = 6)
+    @Column(name = "ACTUAL_AMOUNT", nullable = false, precision = 24, scale = 10)
     private BigDecimal actualAmount;
 
     @Column(name = "SUMMARY_ROW_COUNT", nullable = false)
@@ -63,7 +63,7 @@ public class PurchaseUploadBatch {
     @Column(name = "UPDATED_BY")
     private Long updatedBy;
 
-    @Column(name = "DELETED_YN", nullable = false, length = 1)
+    @Column(name = "DELETED_YN", nullable = false, length = 1, columnDefinition = "CHAR(1)")
     private String deletedYn;
 
     @Column(name = "DELETED_AT")

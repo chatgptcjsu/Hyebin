@@ -50,7 +50,7 @@ public class PurchaseMonthSnapshot {
     @Column(name = "UPDATED_BY")
     private Long updatedBy;
 
-    @Column(name = "DELETED_YN", nullable = false, length = 1)
+    @Column(name = "DELETED_YN", nullable = false, length = 1, columnDefinition = "CHAR(1)")
     private String deletedYn;
 
     @Column(name = "DELETED_AT")
