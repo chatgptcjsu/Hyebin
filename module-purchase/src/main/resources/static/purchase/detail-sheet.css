@@ -48,6 +48,7 @@ h2 { margin: 0; color: #293b51; font-size: 14px; }
 .note-panel { padding: 14px 16px; }
 .note-panel h2 { padding-bottom: 9px; border-bottom: 1px solid #e3e8ee; }
 .note-panel ol, .note-panel ul { display: grid; gap: 7px; margin: 11px 0 0; padding-left: 24px; }
+.note-panel ol { padding-left: 0; list-style: none; }
 .note-panel li { padding-left: 2px; color: #4f5d6e; font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; }
 .empty-note { margin: 12px 0 2px; color: #9aa5b2; font-size: 11px; }
 .empty-note[hidden] { display: none; }

@@ -80,6 +80,7 @@ h2 { margin: 0; color: #2b3d52; font-size: 14px; font-weight: 700; letter-spacin
 .annual-table tbody td, .annual-table tbody th { font-size: 13px; }
 .monthly-summary-row { cursor: pointer; }
 .monthly-summary-row:hover { background: #f5f9ff; }
+.monthly-summary-row[role="link"]:focus-visible { outline: 2px solid #6e9ed4; outline-offset: -2px; }
 .monthly-summary-row.is-unuploaded { color: #b1bac5; cursor: default; }
 .monthly-summary-row.is-unuploaded td { color: #adb7c2; }
 .annual-total-row { background: #f4f7fa; font-weight: 700; }

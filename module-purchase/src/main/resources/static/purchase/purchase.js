@@ -52,7 +52,7 @@ function renderMonthlySummary(points, totals = {}) {
   document.getElementById('coverage-label').textContent = uploaded.length ? `${uploaded.length}/12개월 자료` : '자료 없음';
   root.innerHTML = (points || []).map((point) => {
     const variance = roundToWhole(point.varianceAmount);
-    return `<tr class="monthly-summary-row${point.uploaded ? '' : ' is-unuploaded'}" data-month="${point.month}" ${point.uploaded ? 'tabindex="0" role="link" aria-haspopup="window" title="클릭하면 업체별 상세 시트를 새 창으로 엽니다"' : ''}>
+    return `<tr class="monthly-summary-row${point.uploaded ? '' : ' is-unuploaded'}" data-month="${point.month}" ${point.uploaded ? `tabindex="0" role="link" aria-label="${yearSelect.value}년 ${point.month}월 상세 시트를 새 창으로 엽니다" title="클릭하면 업체별 상세 시트를 새 창으로 엽니다"` : ''}>
       <td>${point.month}월</td>
       <td class="number-cell">${point.uploaded ? money(point.planAmount) : '—'}</td>
       <td class="number-cell">${point.uploaded ? money(point.actualAmount) : '—'}</td>
@@ -97,7 +97,7 @@ function renderMonthlyGraph(points) {
     return `<line x1="${left}" x2="${right}" y1="${yy}" y2="${yy}" class="chart-gridline"/><text x="${left - 9}" y="${yy + 4}" text-anchor="end" class="axis-label">${money(value)}</text>`;
   }).join('');
   const labels = Array.from({ length: 12 }, (_, index) => `<text x="${x(index + 1)}" y="${bottom + 25}" text-anchor="middle" class="axis-label">${index + 1}월</text>`).join('');
-  const markers = uploaded.map((point) => `<g class="graph-month-point" data-month="${point.month}" tabindex="0" role="button" aria-label="${point.month}월 상세 사유로 이동"><circle cx="${x(point.month)}" cy="${y(point.planAmount)}" r="5" class="trend-point plan-point"><title>${point.month}월 계획 ${money(point.planAmount)}백만원</title></circle><circle cx="${x(point.month)}" cy="${y(point.actualAmount)}" r="5" class="trend-point actual-point"><title>${point.month}월 실적 ${money(point.actualAmount)}백만원</title></circle></g>`).join('');
+  const markers = uploaded.map((point) => `<g class="graph-month-point" data-month="${point.month}" tabindex="0" role="button" aria-label="${yearSelect.value}년 ${point.month}월 상세 시트를 새 창으로 엽니다"><circle cx="${x(point.month)}" cy="${y(point.planAmount)}" r="5" class="trend-point plan-point"><title>${point.month}월 계획 ${money(point.planAmount)}백만원</title></circle><circle cx="${x(point.month)}" cy="${y(point.actualAmount)}" r="5" class="trend-point actual-point"><title>${point.month}월 실적 ${money(point.actualAmount)}백만원</title></circle></g>`).join('');
   root.innerHTML = `<svg viewBox="0 0 1000 320" role="img" aria-label="월별 계획과 실적 꺾은선 그래프" preserveAspectRatio="none">
     ${grid}<path d="${makePath('planAmount')}" class="trend-line plan-trend"/><path d="${makePath('actualAmount')}" class="trend-line actual-trend"/>${markers}${labels}</svg>`;
   root.querySelectorAll('.graph-month-point').forEach((point) => {

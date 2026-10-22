@@ -31,7 +31,7 @@ function renderNotes(elementId, emptyId, items, ordered) {
   const rows = (items || []).filter((item) => String(item || '').trim());
   target.innerHTML = rows.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
   empty.hidden = rows.length > 0;
-  if (!ordered) target.style.listStyle = 'disc';
+  if (!ordered) target.style.listStyle = 'none';
 }
 
 async function loadDetailSheet() {
