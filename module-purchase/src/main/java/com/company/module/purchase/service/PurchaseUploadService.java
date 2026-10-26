@@ -6,10 +6,12 @@ import com.company.module.purchase.entity.PurchaseDetailSheet;
 import com.company.module.purchase.entity.PurchaseCategory;
 import com.company.module.purchase.entity.PurchaseMonthSnapshot;
 import com.company.module.purchase.entity.PurchaseUploadBatch;
+import com.company.module.purchase.entity.PurchaseUploadFile;
 import com.company.module.purchase.repository.PurchaseCategoryRepository;
 import com.company.module.purchase.repository.PurchaseDetailSheetRepository;
 import com.company.module.purchase.repository.PurchaseMonthSnapshotRepository;
 import com.company.module.purchase.repository.PurchaseUploadBatchRepository;
+import com.company.module.purchase.repository.PurchaseUploadFileRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,7 @@ public class PurchaseUploadService {
     private final PurchaseMonthSnapshotRepository snapshotRepository;
     private final PurchaseCategoryRepository categoryRepository;
     private final PurchaseDetailSheetRepository detailSheetRepository;
+    private final PurchaseUploadFileRepository uploadFileRepository;
     private final ObjectMapper objectMapper;
     private final CurrentUserProvider currentUserProvider;
 
@@ -53,6 +56,9 @@ public class PurchaseUploadService {
                 if (parsed.detailSheet() != null
                     && !detailSheetRepository.existsByUploadBatchIdAndDeletedYn(active.getUploadBatchId(), "N")) {
                     saveDetailSheet(active.getUploadBatchId(), parsed.detailSheet(), currentUserProvider.getCurrentUserId());
+                }
+                if (!uploadFileRepository.existsByUploadBatchIdAndDeletedYn(active.getUploadBatchId(), "N")) {
+                    saveOriginalFile(active.getUploadBatchId(), file, currentUserProvider.getCurrentUserId());
                 }
                 return toResponse(active, true, false);
             }
@@ -103,6 +109,7 @@ public class PurchaseUploadService {
                 .build())
             .toList();
         categoryRepository.saveAll(categories);
+        saveOriginalFile(batch.getUploadBatchId(), file, userId);
         if (parsed.detailSheet() != null) {
             saveDetailSheet(batch.getUploadBatchId(), parsed.detailSheet(), userId);
         }
@@ -120,6 +127,18 @@ public class PurchaseUploadService {
             current.replaceBatch(batch.getUploadBatchId(), userId);
         }
         return toResponse(batch, false, false);
+    }
+
+    private void saveOriginalFile(Long batchId, MultipartFile file, Long userId) {
+        try {
+            uploadFileRepository.save(PurchaseUploadFile.builder()
+                .uploadBatchId(batchId)
+                .fileData(file.getBytes())
+                .createdBy(userId)
+                .build());
+        } catch (IOException exception) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
     }
 
     private void saveDetailSheet(Long batchId, ParsedPurchaseDetailSheet detailSheet, Long userId) {

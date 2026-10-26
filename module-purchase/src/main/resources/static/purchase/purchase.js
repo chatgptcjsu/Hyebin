@@ -82,10 +82,14 @@ function renderUploadHistory(entries) {
   root.innerHTML = entries.map((item) => {
     const statusLabel = item.uploadStatus === 'CURRENT' ? '현재 반영' : item.uploadStatus === 'REPLACED' ? '교체됨' : item.uploadStatus;
     const statusClass = item.uploadStatus === 'CURRENT' ? 'is-current' : 'is-replaced';
+    const filename = escapeHtml(item.originalFilename || '—');
+    const fileCell = item.originalFileAvailable
+      ? `<a class="history-download-link" href="${apiRoot}/upload-history/${encodeURIComponent(item.uploadBatchId)}/file" download>${filename}</a>`
+      : `<span title="기존 업로드 파일 원본이 보관되지 않았습니다.">${filename}</span><small class="history-file-unavailable">원본 미보관</small>`;
     return `<tr>
       <td>${item.purchaseMonth}월</td>
       <td><span class="upload-status ${statusClass}">${escapeHtml(statusLabel || '—')}</span></td>
-      <td class="history-filename" title="${escapeHtml(item.originalFilename || '')}">${escapeHtml(item.originalFilename || '—')}</td>
+      <td class="history-filename" title="${filename}">${fileCell}</td>
       <td>${escapeHtml(formatUploadDate(item.createdAt))}</td>
       <td class="number-cell">${money(item.planAmount)}</td>
       <td class="number-cell">${money(item.actualAmount)}</td>

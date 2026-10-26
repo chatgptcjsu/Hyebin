@@ -22,15 +22,17 @@
 - 사업부별 실적 합계는 표시하지 않음 (첫 시트에 사업부별 자료가 없음)
 - 동일 연월 재업로드 시 SHA-256 동일 파일은 중복 적재하지 않음
 - 다른 파일이면 먼저 교체 확인 응답을 반환하며, 확인 후 현재 자료를 교체하고 구버전 및 업로드 이력은 보존
-- 원본 Excel 파일은 저장하지 않고 파일명, SHA-256, 파싱한 자료만 DB에 저장
+- 업로드 원본 Excel은 `purchase_upload_file`에 저장하고 이력에서 다운로드 가능. 원본 보관 도입 전 기록은 원본 파일을 재업로드하면 해시 일치 확인 후 파일 데이터만 보충
 
 ## 생성 테이블
 | 테이블 | 설명 |
 |---|---|
 | `purchase_upload_batch` | 월별 업로드 버전, 요약 금액, 파일 해시 및 업로드 이력 |
+| `purchase_upload_file` | 업로드 원본 Excel 파일 바이너리 |
 | `purchase_month_snapshot` | 연도·월별 현재 반영 버전을 가리키는 자료 포인터 |
 | `purchase_category` | 첫 번째 시트의 구분별 구매실적 요약 행 |
 | `purchase_detail_sheet` | 두 번째 시트의 업체별 표, 합계, 주요 이슈·개선 방향 JSON 데이터 |
+| `purchase_upload_file` | 업로드 원본 Excel 파일 바이너리 |
 
 업로드 배치와 월별 상세의 기존 이력은 보존합니다. 논리 삭제는 `DELETED_YN` 공통 컬럼 기준이며 물리 삭제는 사용하지 않습니다.
 
@@ -44,6 +46,7 @@
 | `GET` | `/purchase-api/dashboard?year=2026` | `PURCHASE_READ` | 월별 계획/실적 및 누계, `monthlyReasons` 연간 12개월 증감 사유 목록 |
 | `GET` | `/purchase-api/dashboard/export?year=2026` | `PURCHASE_READ` | 월별 요약표 Excel(.xlsx) 다운로드 |
 | `GET` | `/purchase-api/upload-history?year=2026` | `PURCHASE_READ` | 연도별 업로드 버전·파일명·상태·업로드 일시·계획·실적 이력 조회 |
+| `GET` | `/purchase-api/upload-history/{uploadBatchId}/file` | `PURCHASE_READ` | 업로드된 원본 Excel 다운로드 |
 | `GET` | `/purchase-api/detail-sheet?year=2026&month=9` | `PURCHASE_READ` | 해당 월 현재 업로드 버전의 두 번째 시트 상세 행·합계·이슈 조회 |
 
 `monthlyReasons`는 업로드된 달에는 첫 시트의 각 구분 행을 반환하고, 미업로드 달에는 해당 월의 `uploaded=false` 행을 반환합니다. `/detail-sheet`는 현재 월 배치의 두 번째 시트 자료를 반환합니다. 기존에 상세 시트를 저장하지 않은 월은 해당 원본 Excel을 다시 업로드해야 상세 창을 채울 수 있습니다.

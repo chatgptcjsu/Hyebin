@@ -14,6 +14,7 @@ public class PurchaseUploadHistoryResponse {
     private Integer purchaseMonth;
     private String originalFilename;
     private String uploadStatus;
+    private boolean originalFileAvailable;
     private BigDecimal planAmount;
     private BigDecimal actualAmount;
     private LocalDateTime createdAt;

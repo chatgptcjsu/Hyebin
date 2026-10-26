@@ -17,9 +17,11 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -70,6 +72,24 @@ public class PurchaseController {
     public ResponseEntity<ApiResponse<List<PurchaseUploadHistoryResponse>>> uploadHistory(
             @RequestParam("year") @Min(2000) @Max(2200) Integer year) {
         return ResponseEntity.ok(ApiResponse.success(uploadHistoryService.getHistory(year)));
+    }
+
+    @GetMapping("/upload-history/{uploadBatchId}/file")
+    @PreAuthorize("hasAuthority('PURCHASE_READ')")
+    public ResponseEntity<byte[]> downloadOriginalFile(@PathVariable("uploadBatchId") @Min(1) Long uploadBatchId) {
+        PurchaseUploadHistoryService.DownloadedFile file = uploadHistoryService.getOriginalFile(uploadBatchId)
+            .orElse(null);
+        if (file == null) return ResponseEntity.notFound().build();
+
+        String contentType = file.filename().toLowerCase().endsWith(".xls")
+            ? "application/vnd.ms-excel"
+            : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(contentType))
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                ContentDisposition.attachment().filename(file.filename(), StandardCharsets.UTF_8).build().toString())
+            .header(HttpHeaders.CACHE_CONTROL, "no-store")
+            .body(file.bytes());
     }
 
     @GetMapping("/dashboard/export")
