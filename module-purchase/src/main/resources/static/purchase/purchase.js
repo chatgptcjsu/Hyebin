@@ -79,9 +79,10 @@ function renderMonthlyGraph(points) {
     return;
   }
   const maxAmount = Math.max(1, ...uploaded.flatMap((point) => [Number(point.planAmount || 0), Number(point.actualAmount || 0)]));
+  const axisMax = Math.max(1000, Math.ceil(maxAmount / 1000) * 1000);
   const left = 58, right = 950, top = 18, bottom = 270;
   const x = (month) => left + (right - left) * (month - 1) / 11;
-  const y = (value) => bottom - Number(value || 0) / maxAmount * (bottom - top);
+  const y = (value) => bottom - Number(value || 0) / axisMax * (bottom - top);
   const makePath = (key) => {
     let previousMonth = 0;
     return (points || []).map((point) => {
@@ -91,9 +92,8 @@ function renderMonthlyGraph(points) {
       return `${command} ${x(point.month)} ${y(point[key])}`;
     }).filter(Boolean).join(' ');
   };
-  const grid = [0, 1, 2, 3, 4].map((tick) => {
-    const value = maxAmount * (1 - tick / 4);
-    const yy = top + (bottom - top) * tick / 4;
+  const grid = Array.from({ length: axisMax / 1000 + 1 }, (_, index) => index * 1000).map((value) => {
+    const yy = y(value);
     return `<line x1="${left}" x2="${right}" y1="${yy}" y2="${yy}" class="chart-gridline"/><text x="${left - 9}" y="${yy + 4}" text-anchor="end" class="axis-label">${money(value)}</text>`;
   }).join('');
   const labels = Array.from({ length: 12 }, (_, index) => `<text x="${x(index + 1)}" y="${bottom + 25}" text-anchor="middle" class="axis-label">${index + 1}월</text>`).join('');
