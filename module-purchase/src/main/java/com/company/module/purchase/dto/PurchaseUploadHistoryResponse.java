@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -16,6 +16,6 @@ public class PurchaseUploadHistoryResponse {
     private boolean originalFileAvailable;
     private BigDecimal planAmount;
     private BigDecimal actualAmount;
-    private LocalDateTime createdAt;
-    private LocalDateTime lastUploadedAt;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime lastUploadedAt;
 }

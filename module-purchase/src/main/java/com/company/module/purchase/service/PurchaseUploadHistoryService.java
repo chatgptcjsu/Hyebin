@@ -13,6 +13,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -24,6 +28,8 @@ public class PurchaseUploadHistoryService {
 
     private final PurchaseMonthSnapshotRepository snapshotRepository;
     private final PurchaseUploadBatchRepository batchRepository;
+    private static final ZoneId DISPLAY_ZONE = ZoneId.of("Asia/Seoul");
+
     private final PurchaseUploadFileRepository uploadFileRepository;
 
     public List<PurchaseUploadHistoryResponse> getHistory(Integer year) {
@@ -49,10 +55,15 @@ public class PurchaseUploadHistoryService {
                 .originalFileAvailable(availableFileBatchIds.contains(batch.getUploadBatchId()))
                 .planAmount(batch.getPlanAmount())
                 .actualAmount(batch.getActualAmount())
-                .createdAt(batch.getCreatedAt())
-                .lastUploadedAt(batch.getLastUploadedAt())
+                .createdAt(toDisplayTime(batch.getCreatedAt()))
+                .lastUploadedAt(toDisplayTime(batch.getLastUploadedAt()))
                 .build())
             .toList();
+    }
+
+    private OffsetDateTime toDisplayTime(LocalDateTime utcTime) {
+        return utcTime == null ? null
+            : utcTime.atOffset(ZoneOffset.UTC).atZoneSameInstant(DISPLAY_ZONE).toOffsetDateTime();
     }
 
     public Optional<DownloadedFile> getOriginalFile(Long uploadBatchId) {

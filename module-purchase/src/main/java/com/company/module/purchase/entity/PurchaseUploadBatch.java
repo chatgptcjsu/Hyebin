@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "purchase_upload_batch")
@@ -93,14 +94,14 @@ public class PurchaseUploadBatch {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(ZoneOffset.UTC);
         this.lastUploadedAt = this.createdAt;
         if (this.deletedYn == null) this.deletedYn = "N";
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     public void markReplaced(Long updatedBy) {
@@ -110,7 +111,7 @@ public class PurchaseUploadBatch {
 
     public void softDelete(Long deletedBy) {
         this.deletedYn = "Y";
-        this.deletedAt = LocalDateTime.now();
+        this.deletedAt = LocalDateTime.now(ZoneOffset.UTC);
         this.deletedBy = deletedBy;
         this.updatedBy = deletedBy;
     }
