@@ -121,9 +121,6 @@ h2 { margin: 0; color: #2b3d52; font-size: 14px; font-weight: 700; letter-spacin
 .history-download-link { color: #3273d9; text-decoration: none; }
 .history-download-link:hover { text-decoration: underline; }
 .history-file-unavailable { display: block; margin-top: 3px; color: #a1acb9; font-size: 9px; }
-.upload-status { display: inline-block; padding: 3px 7px; border-radius: 5px; font-size: 9px; font-weight: 600; }
-.upload-status.is-current { background: #e8f7f1; color: #16856a; }
-.upload-status.is-replaced { background: #f0f2f5; color: #788596; }
 .detail-panel { margin-top: 14px; padding: 17px 18px 12px; }
 .detail-heading { align-items: end; }
 .detail-filters { display: flex; align-items: end; gap: 7px; }

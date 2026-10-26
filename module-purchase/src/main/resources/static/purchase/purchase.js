@@ -76,19 +76,16 @@ function formatUploadDate(value) {
 function renderUploadHistory(entries) {
   const root = document.getElementById('upload-history-body');
   if (!entries?.length) {
-    root.innerHTML = '<tr><td colspan="6" class="empty-state">선택한 연도의 업로드 이력이 없습니다.</td></tr>';
+    root.innerHTML = '<tr><td colspan="5" class="empty-state">선택한 연도의 업로드 자료가 없습니다.</td></tr>';
     return;
   }
   root.innerHTML = entries.map((item) => {
-    const statusLabel = item.uploadStatus === 'CURRENT' ? '현재 반영' : item.uploadStatus === 'REPLACED' ? '교체됨' : item.uploadStatus;
-    const statusClass = item.uploadStatus === 'CURRENT' ? 'is-current' : 'is-replaced';
     const filename = escapeHtml(item.originalFilename || '—');
     const fileCell = item.originalFileAvailable
       ? `<a class="history-download-link" href="${apiRoot}/upload-history/${encodeURIComponent(item.uploadBatchId)}/file" download>${filename}</a>`
       : `<span title="기존 업로드 파일 원본이 보관되지 않았습니다.">${filename}</span><small class="history-file-unavailable">원본 미보관</small>`;
     return `<tr>
       <td>${item.purchaseMonth}월</td>
-      <td><span class="upload-status ${statusClass}">${escapeHtml(statusLabel || '—')}</span></td>
       <td class="history-filename" title="${filename}">${fileCell}</td>
       <td>${escapeHtml(formatUploadDate(item.lastUploadedAt || item.createdAt))}</td>
       <td class="number-cell">${money(item.planAmount)}</td>
@@ -99,13 +96,13 @@ function renderUploadHistory(entries) {
 
 async function loadUploadHistory(year) {
   const root = document.getElementById('upload-history-body');
-  root.innerHTML = '<tr><td colspan="6" class="empty-state">업로드 이력을 불러오는 중입니다.</td></tr>';
+  root.innerHTML = '<tr><td colspan="5" class="empty-state">업로드 자료를 불러오는 중입니다.</td></tr>';
   try {
     const entries = await requestJson(`${apiRoot}/upload-history?year=${encodeURIComponent(year)}`, { cache: 'no-store' });
     renderUploadHistory(entries);
     return true;
   } catch (error) {
-    root.innerHTML = `<tr><td colspan="6" class="empty-state">${escapeHtml(error.message || '업로드 이력을 불러오지 못했습니다.')}</td></tr>`;
+    root.innerHTML = `<tr><td colspan="5" class="empty-state">${escapeHtml(error.message || '업로드 자료를 불러오지 못했습니다.')}</td></tr>`;
     return false;
   }
 }

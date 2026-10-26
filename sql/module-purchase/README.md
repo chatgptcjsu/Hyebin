@@ -16,13 +16,13 @@
 - 첫 시트의 구분 행 합계와 `합계` 행이 다르면 저장을 거부
 - 월별 계획·실적 요약표와 그 아래 전체 너비 꺾은선 그래프. 업로드된 월 행 또는 그래프 점을 누르면 새 창에서 해당 월의 두 번째 시트 상세를 확인
 - 월별 요약의 Excel 저장 버튼으로 선택 연도 요약표(.xlsx) 다운로드
-- 화면 하단에서 선택 연도의 업로드 버전, 파일명, 최신 업로드 일시, 계획·실적 이력 확인
+- 화면 하단에서 선택 연도의 월별 최신 업로드 자료만 확인. 파일명, 최근 업로드 일시, 계획·실적 표시
 - 우측 상단 새로고침 버튼으로 대시보드와 업로드 이력을 서버에서 다시 조회. 같은 파일을 다시 올려도 별도의 새 업로드 버전으로 이력에 추가
 - 선택한 연도의 1~12월 계획 대비·전월 대비 증감액 및 증감 사유 표
 - 미업로드 월도 연간 표에 표시해 연도별 입력 범위를 한눈에 확인
 - 사업부별 실적 합계는 표시하지 않음 (첫 시트에 사업부별 자료가 없음)
 - 동일 연월에 파일을 재업로드하면 SHA-256이 같더라도 신규 업로드 버전으로 추가
-- 해당 연월 자료가 있으면 먼저 확인을 요청하고, 확인 후 신규 버전을 현재 자료로 반영하며 기존 버전과 업로드 이력을 보존
+- 해당 연월 자료가 있으면 먼저 확인을 요청하고, 확인 후 신규 버전을 현재 자료로 반영. 화면 이력에는 월별 최신 버전만 표시
 - 업로드 원본 Excel은 `purchase_upload_file`에 저장하고 이력에서 다운로드 가능. 원본 보관 도입 전의 재업로드도 신규 버전으로 기록
 
 ## 생성 테이블
@@ -46,7 +46,7 @@
 | `POST` | `/purchase-api/uploads?confirmReplace=true` | `PURCHASE_WRITE` | 확인된 업로드 파일을 신규 버전으로 추가하고 현재 자료로 반영 |
 | `GET` | `/purchase-api/dashboard?year=2026` | `PURCHASE_READ` | 월별 계획/실적 및 누계, `monthlyReasons` 연간 12개월 증감 사유 목록 |
 | `GET` | `/purchase-api/dashboard/export?year=2026` | `PURCHASE_READ` | 월별 요약표 Excel(.xlsx) 다운로드 |
-| `GET` | `/purchase-api/upload-history?year=2026` | `PURCHASE_READ` | 연도별 업로드 버전·파일명·상태·최근 업로드 일시·계획·실적 이력 조회 |
+| `GET` | `/purchase-api/upload-history?year=2026` | `PURCHASE_READ` | 연도별 월별 현재 업로드 자료(최신 버전) 조회 |
 | `GET` | `/purchase-api/upload-history/{uploadBatchId}/file` | `PURCHASE_READ` | 업로드된 원본 Excel 다운로드 |
 | `GET` | `/purchase-api/detail-sheet?year=2026&month=9` | `PURCHASE_READ` | 해당 월 현재 업로드 버전의 두 번째 시트 상세 행·합계·이슈 조회 |
 
