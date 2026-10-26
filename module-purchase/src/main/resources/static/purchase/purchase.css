@@ -110,6 +110,11 @@ h2 { margin: 0; color: #2b3d52; font-size: 14px; font-weight: 700; letter-spacin
 .reason-table tr.is-focused { background: #fff7dd; transition: background .25s ease; }
 .reason-month { width: 58px; color: #40556d; font-weight: 600; }
 .reason-panel .table-wrap { margin-top: 13px; }
+.upload-history-table { min-width: 850px; }
+.upload-history-table .history-filename { max-width: 360px; overflow: hidden; text-overflow: ellipsis; }
+.upload-status { display: inline-block; padding: 3px 7px; border-radius: 5px; font-size: 9px; font-weight: 600; }
+.upload-status.is-current { background: #e8f7f1; color: #16856a; }
+.upload-status.is-replaced { background: #f0f2f5; color: #788596; }
 .detail-panel { margin-top: 14px; padding: 17px 18px 12px; }
 .detail-heading { align-items: end; }
 .detail-filters { display: flex; align-items: end; gap: 7px; }

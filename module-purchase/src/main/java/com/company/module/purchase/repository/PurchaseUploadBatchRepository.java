@@ -11,4 +11,7 @@ public interface PurchaseUploadBatchRepository extends JpaRepository<PurchaseUpl
 
     List<PurchaseUploadBatch> findByPurchaseYearAndDeletedYnOrderByPurchaseMonthAscCreatedAtDesc(
         Integer purchaseYear, String deletedYn);
+
+    List<PurchaseUploadBatch> findByPurchaseYearAndDeletedYnOrderByCreatedAtDesc(
+        Integer purchaseYear, String deletedYn);
 }

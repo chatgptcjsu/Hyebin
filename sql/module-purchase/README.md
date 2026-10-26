@@ -15,6 +15,8 @@
 - 파일명에 `2026년 9월`처럼 연·월이 있으면 해당 월을 우선 적용하고, 파일명에 없을 때만 첫 시트 제목을 사용. 첫 시트의 구분별 계획·실적·증감액·증감사유를 파싱
 - 첫 시트의 구분 행 합계와 `합계` 행이 다르면 저장을 거부
 - 월별 계획·실적 요약표와 그 아래 전체 너비 꺾은선 그래프. 업로드된 월 행 또는 그래프 점을 누르면 새 창에서 해당 월의 두 번째 시트 상세를 확인
+- 월별 요약의 Excel 저장 버튼으로 선택 연도 요약표(.xlsx) 다운로드
+- 화면 하단에서 선택 연도의 업로드 버전, 파일명, 업로드 일시, 계획·실적 이력 확인
 - 선택한 연도의 1~12월 계획 대비·전월 대비 증감액 및 증감 사유 표
 - 미업로드 월도 연간 표에 표시해 연도별 입력 범위를 한눈에 확인
 - 사업부별 실적 합계는 표시하지 않음 (첫 시트에 사업부별 자료가 없음)
@@ -40,6 +42,8 @@
 | `POST` | `/purchase-api/uploads?confirmReplace=false` | `PURCHASE_WRITE` | `file` multipart Excel 업로드. 기존 연월 자료가 있으면 교체 확인 요청 |
 | `POST` | `/purchase-api/uploads?confirmReplace=true` | `PURCHASE_WRITE` | 확인된 새 파일을 해당 연월의 현재 자료로 반영 |
 | `GET` | `/purchase-api/dashboard?year=2026` | `PURCHASE_READ` | 월별 계획/실적 및 누계, `monthlyReasons` 연간 12개월 증감 사유 목록 |
+| `GET` | `/purchase-api/dashboard/export?year=2026` | `PURCHASE_READ` | 월별 요약표 Excel(.xlsx) 다운로드 |
+| `GET` | `/purchase-api/upload-history?year=2026` | `PURCHASE_READ` | 연도별 업로드 버전·파일명·상태·업로드 일시·계획·실적 이력 조회 |
 | `GET` | `/purchase-api/detail-sheet?year=2026&month=9` | `PURCHASE_READ` | 해당 월 현재 업로드 버전의 두 번째 시트 상세 행·합계·이슈 조회 |
 
 `monthlyReasons`는 업로드된 달에는 첫 시트의 각 구분 행을 반환하고, 미업로드 달에는 해당 월의 `uploaded=false` 행을 반환합니다. `/detail-sheet`는 현재 월 배치의 두 번째 시트 자료를 반환합니다. 기존에 상세 시트를 저장하지 않은 월은 해당 원본 Excel을 다시 업로드해야 상세 창을 채울 수 있습니다.

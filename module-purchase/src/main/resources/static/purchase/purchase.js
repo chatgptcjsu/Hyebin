@@ -41,6 +41,69 @@ function openDetailSheet(month) {
   if (!detailWindow) showNotice('상세 창이 차단되었습니다. 브라우저에서 팝업을 허용해 주세요.', 'error');
 }
 
+async function exportMonthlySummary() {
+  const button = document.getElementById('export-summary');
+  const year = yearSelect.value;
+  button.disabled = true;
+  try {
+    const response = await fetch(`${apiRoot}/dashboard/export?year=${encodeURIComponent(year)}`, { credentials: 'same-origin' });
+    if (!response.ok) {
+      let body;
+      try { body = await response.json(); } catch { body = null; }
+      throw new Error(body?.message || body?.error?.message || `엑셀 저장에 실패했습니다. (HTTP ${response.status})`);
+    }
+    const file = await response.blob();
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${year}년_월별_구매실적_요약.xlsx`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showNotice(`${year}년 월별 구매실적 요약을 Excel로 저장했습니다.`, 'success');
+  } catch (error) {
+    showNotice(error.message, 'error');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function formatUploadDate(value) {
+  return value ? String(value).replace('T', ' ').slice(0, 16) : '—';
+}
+
+function renderUploadHistory(entries) {
+  const root = document.getElementById('upload-history-body');
+  if (!entries?.length) {
+    root.innerHTML = '<tr><td colspan="6" class="empty-state">선택한 연도의 업로드 이력이 없습니다.</td></tr>';
+    return;
+  }
+  root.innerHTML = entries.map((item) => {
+    const statusLabel = item.uploadStatus === 'CURRENT' ? '현재 반영' : item.uploadStatus === 'REPLACED' ? '교체됨' : item.uploadStatus;
+    const statusClass = item.uploadStatus === 'CURRENT' ? 'is-current' : 'is-replaced';
+    return `<tr>
+      <td>${item.purchaseMonth}월</td>
+      <td><span class="upload-status ${statusClass}">${escapeHtml(statusLabel || '—')}</span></td>
+      <td class="history-filename" title="${escapeHtml(item.originalFilename || '')}">${escapeHtml(item.originalFilename || '—')}</td>
+      <td>${escapeHtml(formatUploadDate(item.createdAt))}</td>
+      <td class="number-cell">${money(item.planAmount)}</td>
+      <td class="number-cell">${money(item.actualAmount)}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadUploadHistory(year) {
+  const root = document.getElementById('upload-history-body');
+  root.innerHTML = '<tr><td colspan="6" class="empty-state">업로드 이력을 불러오는 중입니다.</td></tr>';
+  try {
+    const entries = await requestJson(`${apiRoot}/upload-history?year=${encodeURIComponent(year)}`);
+    renderUploadHistory(entries);
+  } catch (error) {
+    root.innerHTML = `<tr><td colspan="6" class="empty-state">${escapeHtml(error.message || '업로드 이력을 불러오지 못했습니다.')}</td></tr>`;
+  }
+}
+
 function renderMonthlySummary(points, totals = {}) {
   const root = document.getElementById('monthly-summary-body');
   const uploaded = (points || []).filter((point) => point.uploaded);
@@ -148,6 +211,7 @@ async function loadDashboard() {
     renderMonthlyReasons([], yearSelect.value);
     document.getElementById('reason-body').innerHTML = `<tr><td colspan="8" class="empty-state">대시보드 데이터를 불러오지 못했습니다.</td></tr>`;
   }
+  await loadUploadHistory(yearSelect.value);
 }
 
 async function uploadFile(file, confirmReplace = false) {
@@ -184,6 +248,7 @@ function initializeControls() {
   }
   yearSelect.value = String(nowYear);
   yearSelect.addEventListener('change', loadDashboard);
+  document.getElementById('export-summary').addEventListener('click', exportMonthlySummary);
   document.getElementById('upload-file').addEventListener('change', async (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';
