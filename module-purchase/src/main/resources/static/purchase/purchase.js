@@ -48,7 +48,6 @@ function renderMonthlySummary(points, totals = {}) {
   const totalActual = Number(totals.totalActualAmount ?? uploaded.reduce((sum, point) => sum + Number(point.actualAmount || 0), 0));
   const totalPlanVariance = Number(totals.totalVarianceAmount ?? (totalActual - totalPlan));
   const totalPreviousVariance = Number(totals.totalPreviousMonthVarianceAmount ?? (points || []).reduce((sum, point) => sum + Number(point.previousMonthVarianceAmount || 0), 0));
-  document.getElementById('coverage-label').textContent = uploaded.length ? `${uploaded.length}/12개월 자료` : '자료 없음';
   root.innerHTML = (points || []).map((point) => {
     const planVariance = roundToWhole(point.varianceAmount);
     const previousVariance = roundToWhole(point.previousMonthVarianceAmount);
