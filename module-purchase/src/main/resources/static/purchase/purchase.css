@@ -40,6 +40,12 @@ button, select { cursor: pointer; }
 .topbar-right { display: flex; align-items: center; gap: 9px; color: #53647a; font-weight: 600; }
 .topbar-indicator { width: 6px; height: 6px; }
 .unit-label { color: #66758a; font-size: 10px; font-weight: 500; white-space: nowrap; }
+.refresh-button { display: inline-flex; height: 29px; align-items: center; gap: 5px; padding: 0 9px; border: 1px solid #dce4ed; border-radius: 6px; background: #fff; color: #53657b; cursor: pointer; font-size: 10px; font-weight: 600; white-space: nowrap; }
+.refresh-button:hover:not(:disabled) { border-color: #abc6e9; background: #f5f9ff; color: #3273d9; }
+.refresh-button:disabled { cursor: wait; opacity: .65; }
+.refresh-button span { display: inline-block; font-size: 15px; line-height: 1; }
+.refresh-button.is-refreshing span { animation: refresh-spin .8s linear infinite; }
+@keyframes refresh-spin { to { transform: rotate(360deg); } }
 .page-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding: 31px 0 23px; }
 .eyebrow, .panel-kicker { margin: 0 0 7px; color: #7590a9; font-size: 9px; font-weight: 700; letter-spacing: .17em; }
 h1 { margin: 0; color: #182b42; font-size: 27px; font-weight: 700; letter-spacing: -.04em; }

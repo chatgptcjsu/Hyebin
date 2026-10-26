@@ -18,4 +18,5 @@ public class PurchaseUploadHistoryResponse {
     private BigDecimal planAmount;
     private BigDecimal actualAmount;
     private LocalDateTime createdAt;
+    private LocalDateTime lastUploadedAt;
 }

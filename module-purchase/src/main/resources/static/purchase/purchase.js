@@ -70,7 +70,7 @@ async function exportMonthlySummary() {
 }
 
 function formatUploadDate(value) {
-  return value ? String(value).replace('T', ' ').slice(0, 16) : '—';
+  return value ? String(value).replace('T', ' ').slice(0, 19) : '—';
 }
 
 function renderUploadHistory(entries) {
@@ -90,7 +90,7 @@ function renderUploadHistory(entries) {
       <td>${item.purchaseMonth}월</td>
       <td><span class="upload-status ${statusClass}">${escapeHtml(statusLabel || '—')}</span></td>
       <td class="history-filename" title="${filename}">${fileCell}</td>
-      <td>${escapeHtml(formatUploadDate(item.createdAt))}</td>
+      <td>${escapeHtml(formatUploadDate(item.lastUploadedAt || item.createdAt))}</td>
       <td class="number-cell">${money(item.planAmount)}</td>
       <td class="number-cell">${money(item.actualAmount)}</td>
     </tr>`;
@@ -101,10 +101,12 @@ async function loadUploadHistory(year) {
   const root = document.getElementById('upload-history-body');
   root.innerHTML = '<tr><td colspan="6" class="empty-state">업로드 이력을 불러오는 중입니다.</td></tr>';
   try {
-    const entries = await requestJson(`${apiRoot}/upload-history?year=${encodeURIComponent(year)}`);
+    const entries = await requestJson(`${apiRoot}/upload-history?year=${encodeURIComponent(year)}`, { cache: 'no-store' });
     renderUploadHistory(entries);
+    return true;
   } catch (error) {
     root.innerHTML = `<tr><td colspan="6" class="empty-state">${escapeHtml(error.message || '업로드 이력을 불러오지 못했습니다.')}</td></tr>`;
+    return false;
   }
 }
 
@@ -203,19 +205,36 @@ function renderMonthlyReasons(reasons, year) {
   }).join('');
 }
 
-async function loadDashboard() {
+async function loadDashboard({ refreshing = false } = {}) {
+  let dashboardLoaded = false;
+  if (refreshing) showNotice('최신 데이터를 불러오고 있습니다.', 'info');
+  else showNotice('', 'info');
   try {
-    showNotice('', 'info');
-    const data = await requestJson(`${apiRoot}/dashboard?year=${encodeURIComponent(yearSelect.value)}`);
+    const data = await requestJson(`${apiRoot}/dashboard?year=${encodeURIComponent(yearSelect.value)}`, { cache: 'no-store' });
     renderMonthlySummary(data.monthly || [], data);
     renderMonthlyGraph(data.monthly || []);
     renderMonthlyReasons(data.monthlyReasons || [], data.year || yearSelect.value);
+    dashboardLoaded = true;
   } catch (error) {
     showNotice(error.message, 'error');
     renderMonthlyReasons([], yearSelect.value);
     document.getElementById('reason-body').innerHTML = `<tr><td colspan="8" class="empty-state">대시보드 데이터를 불러오지 못했습니다.</td></tr>`;
   }
-  await loadUploadHistory(yearSelect.value);
+  const historyLoaded = await loadUploadHistory(yearSelect.value);
+  return dashboardLoaded && historyLoaded;
+}
+
+async function refreshDashboard() {
+  const button = document.getElementById('refresh-dashboard');
+  button.disabled = true;
+  button.classList.add('is-refreshing');
+  try {
+    const loaded = await loadDashboard({ refreshing: true });
+    showNotice(loaded ? '최신 데이터로 새로고침했습니다.' : '일부 데이터를 새로고침하지 못했습니다. 다시 시도해 주세요.', loaded ? 'success' : 'error');
+  } finally {
+    button.disabled = false;
+    button.classList.remove('is-refreshing');
+  }
 }
 
 async function uploadFile(file, confirmReplace = false) {
@@ -253,6 +272,7 @@ function initializeControls() {
   yearSelect.value = String(nowYear);
   yearSelect.addEventListener('change', loadDashboard);
   document.getElementById('export-summary').addEventListener('click', exportMonthlySummary);
+  document.getElementById('refresh-dashboard').addEventListener('click', refreshDashboard);
   document.getElementById('upload-file').addEventListener('change', async (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';

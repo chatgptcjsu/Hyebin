@@ -28,7 +28,7 @@ public class PurchaseUploadHistoryService {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
         List<PurchaseUploadBatch> batches = batchRepository
-            .findByPurchaseYearAndDeletedYnOrderByCreatedAtDesc(year, "N");
+            .findByPurchaseYearAndDeletedYnOrderByLastUploadedAtDesc(year, "N");
         List<Long> batchIds = batches.stream().map(PurchaseUploadBatch::getUploadBatchId).toList();
         Set<Long> availableFileBatchIds = batchIds.isEmpty() ? Set.of()
             : uploadFileRepository.findAvailableBatchIds(batchIds, "N");
@@ -43,6 +43,7 @@ public class PurchaseUploadHistoryService {
                 .planAmount(batch.getPlanAmount())
                 .actualAmount(batch.getActualAmount())
                 .createdAt(batch.getCreatedAt())
+                .lastUploadedAt(batch.getLastUploadedAt())
                 .build())
             .toList();
     }

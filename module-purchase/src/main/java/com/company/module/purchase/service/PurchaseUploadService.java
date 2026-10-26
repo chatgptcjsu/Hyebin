@@ -53,6 +53,7 @@ public class PurchaseUploadService {
             PurchaseUploadBatch active = batchRepository.findById(current.getCurrentUploadBatchId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
             if (active.getFileSha256().equals(sha256)) {
+                active.markReuploaded(currentUserProvider.getCurrentUserId());
                 if (parsed.detailSheet() != null
                     && !detailSheetRepository.existsByUploadBatchIdAndDeletedYn(active.getUploadBatchId(), "N")) {
                     saveDetailSheet(active.getUploadBatchId(), parsed.detailSheet(), currentUserProvider.getCurrentUserId());

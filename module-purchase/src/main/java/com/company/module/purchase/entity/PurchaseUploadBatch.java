@@ -54,6 +54,9 @@ public class PurchaseUploadBatch {
     @Column(name = "CREATED_AT", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "LAST_UPLOADED_AT", nullable = false)
+    private LocalDateTime lastUploadedAt;
+
     @Column(name = "CREATED_BY")
     private Long createdBy;
 
@@ -91,6 +94,7 @@ public class PurchaseUploadBatch {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        this.lastUploadedAt = this.createdAt;
         if (this.deletedYn == null) this.deletedYn = "N";
     }
 
@@ -101,6 +105,11 @@ public class PurchaseUploadBatch {
 
     public void markReplaced(Long updatedBy) {
         this.uploadStatus = "REPLACED";
+        this.updatedBy = updatedBy;
+    }
+
+    public void markReuploaded(Long updatedBy) {
+        this.lastUploadedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
     }
 
