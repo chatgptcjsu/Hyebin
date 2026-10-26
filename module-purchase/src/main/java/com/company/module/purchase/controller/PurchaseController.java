@@ -5,11 +5,15 @@ import com.company.module.purchase.dto.PurchaseDashboardResponse;
 import com.company.module.purchase.dto.PurchaseDetailSheetResponse;
 import com.company.module.purchase.dto.PurchaseUploadHistoryResponse;
 import com.company.module.purchase.dto.PurchaseUploadResponse;
+import com.company.module.purchase.dto.PurchaseVendorEvaluationRequest;
+import com.company.module.purchase.dto.PurchaseVendorEvaluationResponse;
 import com.company.module.purchase.service.PurchaseDashboardService;
 import com.company.module.purchase.service.PurchaseDetailSheetService;
 import com.company.module.purchase.service.PurchaseSummaryExcelService;
 import com.company.module.purchase.service.PurchaseUploadHistoryService;
 import com.company.module.purchase.service.PurchaseUploadService;
+import com.company.module.purchase.service.PurchaseVendorEvaluationService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +27,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,6 +49,7 @@ public class PurchaseController {
     private final PurchaseDetailSheetService detailSheetService;
     private final PurchaseSummaryExcelService summaryExcelService;
     private final PurchaseUploadHistoryService uploadHistoryService;
+    private final PurchaseVendorEvaluationService vendorEvaluationService;
 
     @PostMapping("/uploads")
     @PreAuthorize("hasAuthority('PURCHASE_WRITE')")
@@ -90,6 +97,41 @@ public class PurchaseController {
                 ContentDisposition.attachment().filename(file.filename(), StandardCharsets.UTF_8).build().toString())
             .header(HttpHeaders.CACHE_CONTROL, "no-store")
             .body(file.bytes());
+    }
+
+    @GetMapping("/vendor-evaluations/criteria")
+    @PreAuthorize("hasAuthority('PURCHASE_READ')")
+    public ResponseEntity<ApiResponse<List<com.company.module.purchase.service.PurchaseVendorEvaluationScoring.Criterion>>> vendorEvaluationCriteria() {
+        return ResponseEntity.ok(ApiResponse.success(vendorEvaluationService.getCriteria()));
+    }
+
+    @GetMapping("/vendor-evaluations")
+    @PreAuthorize("hasAuthority('PURCHASE_READ')")
+    public ResponseEntity<ApiResponse<List<PurchaseVendorEvaluationResponse>>> vendorEvaluations(
+            @RequestParam("year") @Min(2000) @Max(2200) Integer year) {
+        return ResponseEntity.ok(ApiResponse.success(vendorEvaluationService.getEvaluations(year)));
+    }
+
+    @GetMapping("/vendor-evaluations/{id}")
+    @PreAuthorize("hasAuthority('PURCHASE_READ')")
+    public ResponseEntity<ApiResponse<PurchaseVendorEvaluationResponse>> vendorEvaluation(@PathVariable("id") @Min(1) Long id) {
+        return ResponseEntity.ok(ApiResponse.success(vendorEvaluationService.getEvaluation(id)));
+    }
+
+    @PostMapping("/vendor-evaluations")
+    @PreAuthorize("hasAuthority('PURCHASE_WRITE')")
+    public ResponseEntity<ApiResponse<PurchaseVendorEvaluationResponse>> createVendorEvaluation(
+            @Valid @RequestBody PurchaseVendorEvaluationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(ApiResponse.success(vendorEvaluationService.create(request)));
+    }
+
+    @PutMapping("/vendor-evaluations/{id}")
+    @PreAuthorize("hasAuthority('PURCHASE_WRITE')")
+    public ResponseEntity<ApiResponse<PurchaseVendorEvaluationResponse>> updateVendorEvaluation(
+            @PathVariable("id") @Min(1) Long id,
+            @Valid @RequestBody PurchaseVendorEvaluationRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(vendorEvaluationService.update(id, request)));
     }
 
     @GetMapping("/dashboard/export")

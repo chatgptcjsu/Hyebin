@@ -1,11 +1,11 @@
 # 구매실적 모니터링 모듈
 
 ## 개요
-기존 플랫폼에 Gradle 서브모듈로 포함되는 구매실적 모니터링 업무 모듈입니다. 월별 Excel을 업로드하면 첫 번째 시트의 요약을 MariaDB에 적재하고, 두 번째 시트는 월별 상세 창에서 볼 수 있도록 저장합니다. 월별 계획·실적 요약표, 꺾은선 그래프, 연간 증감 사유 표를 제공합니다. 독립 실행 애플리케이션이 아닙니다.
+기존 플랫폼에 Gradle 서브모듈로 포함되는 구매실적 모니터링 및 협력업체 평가 업무 모듈입니다. 월별 Excel 구매실적을 조회하고, 연 1회 협력업체 평가를 진행해 평가 배점 기준에 따른 총점과 등급을 확인합니다. 독립 실행 애플리케이션이 아닙니다.
 
 - 모듈 디렉터리: `module-purchase/`
 - 패키지 루트: `com.company.module.purchase`
-- 화면 URL: `/purchase/index.html`
+- 화면 URL: `/purchase/index.html`, `/purchase/vendor-evaluation.html`
 - API Prefix: `/purchase-api`
 - 금액 단위: 백만원, VAT 별도
 - 인증/인가: 기존 플랫폼 core 사용 (`PURCHASE_READ`, `PURCHASE_WRITE` 권한 등록 필요)
@@ -21,6 +21,8 @@
 - 선택한 연도의 1~12월 계획 대비·전월 대비 증감액 및 증감 사유 표
 - 미업로드 월도 연간 표에 표시해 연도별 입력 범위를 한눈에 확인
 - 사업부별 실적 합계는 표시하지 않음 (첫 시트에 사업부별 자료가 없음)
+- 연도별 협력업체 평가 입력·수정·목록. 12개 항목 선택을 기준표대로 서버에서 합산하고 A/B/C/D 등급 산정
+- 협력업체는 연도별 한 건으로 관리하며 같은 연도·업체를 중복 등록하지 않음
 - 동일 연월에 파일을 재업로드하면 SHA-256이 같더라도 신규 업로드 버전으로 추가
 - 해당 연월 자료가 있으면 먼저 확인을 요청하고, 확인 후 신규 버전을 현재 자료로 반영. 화면 이력에는 월별 최신 버전만 표시
 - 업로드 원본 Excel은 `purchase_upload_file`에 저장하고 이력에서 다운로드 가능. 원본 보관 도입 전의 재업로드도 신규 버전으로 기록
@@ -33,7 +35,7 @@
 | `purchase_month_snapshot` | 연도·월별 현재 반영 버전을 가리키는 자료 포인터 |
 | `purchase_category` | 첫 번째 시트의 구분별 구매실적 요약 행 |
 | `purchase_detail_sheet` | 두 번째 시트의 업체별 표, 합계, 주요 이슈·개선 방향 JSON 데이터 |
-| `purchase_upload_file` | 업로드 원본 Excel 파일 바이너리 |
+| `purchase_vendor_evaluation` | 연도별 협력업체 평가 답변, 항목별 점수, 총점 및 등급 |
 
 업로드 배치와 월별 상세의 기존 이력은 보존합니다. 논리 삭제는 `DELETED_YN` 공통 컬럼 기준이며 물리 삭제는 사용하지 않습니다.
 
@@ -49,6 +51,11 @@
 | `GET` | `/purchase-api/upload-history?year=2026` | `PURCHASE_READ` | 연도별 월별 현재 업로드 자료(최신 버전, 업로드 시각 KST) 조회 |
 | `GET` | `/purchase-api/upload-history/{uploadBatchId}/file` | `PURCHASE_READ` | 업로드된 원본 Excel 다운로드 |
 | `GET` | `/purchase-api/detail-sheet?year=2026&month=9` | `PURCHASE_READ` | 해당 월 현재 업로드 버전의 두 번째 시트 상세 행·합계·이슈 조회 |
+| `GET` | `/purchase-api/vendor-evaluations/criteria` | `PURCHASE_READ` | 평가 항목, 선택지 및 배점 기준 조회 |
+| `GET` | `/purchase-api/vendor-evaluations?year=2026` | `PURCHASE_READ` | 해당 연도 협력업체 평가 목록 조회 |
+| `GET` | `/purchase-api/vendor-evaluations/{id}` | `PURCHASE_READ` | 평가 상세 조회 |
+| `POST` | `/purchase-api/vendor-evaluations` | `PURCHASE_WRITE` | 평가 저장. 점수·등급은 서버에서 재계산 |
+| `PUT` | `/purchase-api/vendor-evaluations/{id}` | `PURCHASE_WRITE` | 기존 평가 수정 및 재계산 |
 
 `monthlyReasons`는 업로드된 달에는 첫 시트의 각 구분 행을 반환하고, 미업로드 달에는 해당 월의 `uploaded=false` 행을 반환합니다. `/detail-sheet`는 현재 월 배치의 두 번째 시트 자료를 반환합니다. 기존에 상세 시트를 저장하지 않은 월은 해당 원본 Excel을 다시 업로드해야 상세 창을 채울 수 있습니다.
 
@@ -71,7 +78,7 @@
 1. 운영자가 DDL을 검토합니다.
 2. 승인된 MariaDB에 `01_schema.sql`을 적용합니다.
 3. `02_seed_data.sql`에는 업무 seed 데이터가 없습니다.
-4. 운영 데이터 반영은 로그인 후 화면에서 월별 Excel을 업로드합니다.
+4. 운영 데이터 반영은 로그인 후 화면에서 월별 Excel을 업로드하거나 협력업체 평가를 입력합니다.
 
 `01_schema.sql`은 `CREATE TABLE IF NOT EXISTS`를 사용하며 `DROP`, `TRUNCATE`, 데이터 전체 삭제를 포함하지 않습니다. 이 모듈에서는 SQL을 자동 실행하지 않습니다.
 
@@ -92,9 +99,11 @@
 - 메뉴명: 구매실적 모니터링
 - 메뉴 위치: 구매관리 > 구매실적 모니터링 (플랫폼 운영자 최종 확인)
 - 메뉴 URL: `/purchase/index.html`
+- 메뉴명: 협력업체 평가
+- 메뉴 URL: `/purchase/vendor-evaluation.html`
 - API Prefix: `/purchase-api`
 - 조회 권한: `PURCHASE_READ`
-- 업로드 권한: `PURCHASE_WRITE`
+- 업로드·평가 저장 권한: `PURCHASE_WRITE`
 - 메뉴/권한 데이터베이스 구조를 알 수 없으므로 core 메뉴·권한 INSERT SQL은 생성하지 않았습니다.
 
 ## 검수 체크리스트
@@ -105,7 +114,8 @@
 | `application.yml`, 보안 설정, 배포 설정 미생성 | 통과 | 금지 파일 미생성 |
 | API prefix 및 `ApiResponse<T>` 사용 | 통과 | `/purchase-api/**` |
 | Entity Setter/Data 어노테이션 미사용 | 통과 | 명시적 Builder/업무 메서드 사용 |
-| SQL 공통 컬럼 및 테이블/컬럼 주석 | 통과 | 네 테이블에 적용 |
+| SQL 공통 컬럼 및 테이블/컬럼 주석 | 통과 | 평가 테이블을 포함한 테이블에 적용 |
 | SQL 안전 규칙 | 통과 | 비파괴 DDL, 자동 실행 없음 |
-| 자체 standalone Gradle 빌드 | 보류 | 현재 작업 공간에 Gradle 실행 파일과 플랫폼 `:core`가 없어 실제 호스트 통합 빌드는 미실행 |
-| 운영 DB·개발서버·운영서버 반영 | 미실행 | 사용자 요청 없이 브랜치/서버에 반영하지 않음 |
+| sandbox-host 통합 Gradle 테스트 | 통과 | `:module-purchase:test` 성공. 운영 플랫폼 통합 빌드와는 별도 |
+| 로컬 sandbox DB·미리보기 | 통과 | 평가 테이블 생성, 화면과 평가 API 저장/조회/수정 확인 |
+| 운영 DB·운영 배포 | 미실행 | 사용자 요청 없이 운영 데이터베이스/서버에는 반영하지 않음 |

@@ -154,11 +154,12 @@ tbody tr:hover { background: #fbfcfe; }
 }
 @media (max-width: 720px) {
   body { min-width: 360px; }
-  .sidebar { position: static; width: auto; height: 58px; flex-direction: row; align-items: center; justify-content: space-between; padding: 0 14px; }
-  .brand { padding: 0; font-size: 11px; }
+  .sidebar { position: static; width: auto; min-height: 58px; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 7px; padding: 10px 14px; }
+  .brand { flex: 1 0 100%; padding: 0; font-size: 11px; }
   .brand-mark { width: 30px; height: 30px; }
-  .nav-caption, .nav-link, .sidebar-note, .sidebar-foot { display: none; }
-  .sidebar::after { content: '구매실적'; padding: 8px 10px; border-radius: 6px; background: #23435e; color: #fff; font-size: 10px; }
+  .nav-caption, .sidebar-note, .sidebar-foot { display: none; }
+  .nav-link { display: flex; min-height: 34px; padding: 0 10px; font-size: 10px; }
+  .sidebar::after { display: none; }
   .main-content { margin-left: 0; padding: 0 14px 24px; }
   .topbar { height: 45px; }
   .topbar-right { display: flex; gap: 5px; font-size: 9px; }
