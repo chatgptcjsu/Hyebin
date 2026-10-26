@@ -28,7 +28,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly project(':core')
+    testImplementation project(':core')
 }
 
 tasks.named('jar') {

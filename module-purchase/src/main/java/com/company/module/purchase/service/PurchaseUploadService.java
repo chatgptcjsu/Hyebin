@@ -50,19 +50,8 @@ public class PurchaseUploadService {
             .orElse(null);
 
         if (current != null) {
-            PurchaseUploadBatch active = batchRepository.findById(current.getCurrentUploadBatchId())
+            batchRepository.findById(current.getCurrentUploadBatchId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
-            if (active.getFileSha256().equals(sha256)) {
-                active.markReuploaded(currentUserProvider.getCurrentUserId());
-                if (parsed.detailSheet() != null
-                    && !detailSheetRepository.existsByUploadBatchIdAndDeletedYn(active.getUploadBatchId(), "N")) {
-                    saveDetailSheet(active.getUploadBatchId(), parsed.detailSheet(), currentUserProvider.getCurrentUserId());
-                }
-                if (!uploadFileRepository.existsByUploadBatchIdAndDeletedYn(active.getUploadBatchId(), "N")) {
-                    saveOriginalFile(active.getUploadBatchId(), file, currentUserProvider.getCurrentUserId());
-                }
-                return toResponse(active, true, false);
-            }
             if (!confirmReplace) {
                 return PurchaseUploadResponse.builder()
                     .purchaseYear(parsed.purchaseYear())

@@ -108,11 +108,6 @@ public class PurchaseUploadBatch {
         this.updatedBy = updatedBy;
     }
 
-    public void markReuploaded(Long updatedBy) {
-        this.lastUploadedAt = LocalDateTime.now();
-        this.updatedBy = updatedBy;
-    }
-
     public void softDelete(Long deletedBy) {
         this.deletedYn = "Y";
         this.deletedAt = LocalDateTime.now();

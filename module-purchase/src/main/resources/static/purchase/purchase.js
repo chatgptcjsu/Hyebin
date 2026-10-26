@@ -245,7 +245,7 @@ async function uploadFile(file, confirmReplace = false) {
   const query = params.toString();
   const result = await requestJson(`${apiRoot}/uploads${query ? `?${query}` : ''}`, { method: 'POST', body: form });
   if (result.requiresReplacementConfirmation && !confirmReplace) {
-    const accepted = window.confirm(`${result.purchaseYear}년 ${result.purchaseMonth}월 자료가 이미 있습니다.\n기존에 반영된 자료를 교체하고 업로드 이력을 보존할까요?`);
+    const accepted = window.confirm(`${result.purchaseYear}년 ${result.purchaseMonth}월 자료가 이미 있습니다.\n업로드 파일을 신규 버전으로 추가하고 기존 버전을 이력으로 보존할까요?`);
     if (!accepted) {
       showNotice('기존 자료는 변경하지 않았습니다.', 'info');
       return;
@@ -255,7 +255,7 @@ async function uploadFile(file, confirmReplace = false) {
   if (result.alreadyCurrent) {
     showNotice(`${result.purchaseYear}년 ${result.purchaseMonth}월 동일한 파일이 이미 반영되어 있습니다.`, 'info');
   } else {
-    showNotice(`${result.purchaseYear}년 ${result.purchaseMonth}월 자료를 반영했습니다. 첫 시트 요약 ${result.summaryRowCount}건`, 'success');
+    showNotice(`${result.purchaseYear}년 ${result.purchaseMonth}월 자료를 신규 업로드 버전으로 반영했습니다. 첫 시트 요약 ${result.summaryRowCount}건`, 'success');
   }
   yearSelect.value = String(result.purchaseYear);
   await loadDashboard();

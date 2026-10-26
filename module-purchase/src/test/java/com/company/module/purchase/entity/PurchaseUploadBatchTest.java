@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PurchaseUploadBatchTest {
 
     @Test
-    void sameFileReuploadAdvancesLatestUploadTimestamp() throws InterruptedException {
+    void newUploadVersionStartsWithItsLatestUploadTimestamp() {
         PurchaseUploadBatch batch = PurchaseUploadBatch.builder()
             .purchaseYear(2026)
             .purchaseMonth(7)
@@ -21,11 +21,6 @@ class PurchaseUploadBatchTest {
             .summaryRowCount(1)
             .build();
         ReflectionTestUtils.invokeMethod(batch, "onCreate");
-        var initialUploadTime = batch.getLastUploadedAt();
-
-        Thread.sleep(5);
-        batch.markReuploaded(42L);
-
-        assertTrue(batch.getLastUploadedAt().isAfter(initialUploadTime));
+        assertTrue(batch.getLastUploadedAt().equals(batch.getCreatedAt()));
     }
 }
