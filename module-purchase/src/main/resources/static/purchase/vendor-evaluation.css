@@ -18,7 +18,7 @@
 .evaluation-list-panel { margin-top: 14px; }
 .evaluation-panel-heading { margin-bottom: 17px; }
 .edit-state, .count-badge { padding: 6px 10px; border-radius: 12px; background: #eff4fa; color: #62768d; font-size: 11px; font-weight: 600; }
-.evaluation-meta-grid { display: grid; grid-template-columns: 160px minmax(200px, 1.6fr) minmax(160px, 1fr) 180px; gap: 12px; padding: 15px; border: 1px solid #edf0f4; border-radius: 8px; background: #fafbfd; }
+.evaluation-meta-grid { display: grid; grid-template-columns: 150px 150px minmax(200px, 1.6fr) minmax(160px, 1fr) 170px; gap: 12px; padding: 15px; border: 1px solid #edf0f4; border-radius: 8px; background: #fafbfd; }
 .form-field { display: flex; min-width: 0; flex-direction: column; gap: 7px; color: #6f7e91; font-size: 12px; font-weight: 600; }
 .form-field input, .form-field select { width: 100%; height: 40px; padding: 0 11px; border: 1px solid #dfe5ed; border-radius: 6px; outline: none; background: #fff; color: #34445a; font-size: 13px; }
 .form-field input:focus, .form-field select:focus { border-color: #76a9eb; box-shadow: 0 0 0 3px rgb(50 115 217 / 10%); }
@@ -54,8 +54,14 @@
 .score-hint { margin-left: auto; color: #8493a4; font-size: 11px; }
 .form-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 13px; }
 .form-actions .secondary-button, .form-actions .primary-button { min-width: 92px; }
-.evaluation-table { min-width: 670px; }
+.evaluation-list-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 15px; }
+.selection-tools { display: flex; align-items: center; gap: 9px; }
+.select-all-control { display: inline-flex; align-items: center; gap: 7px; color: #465a70; font-size: 12px; font-weight: 700; cursor: pointer; }
+.select-all-control input, .evaluation-row-checkbox { width: 18px; height: 18px; accent-color: #3273d9; cursor: pointer; }
+.selection-count { color: #718198; font-size: 12px; }
+.evaluation-table { min-width: 1080px; }
 .evaluation-table th, .evaluation-table td { font-size: 12px; text-align: center; }
+.evaluation-table td:first-child { width: 55px; }
 .evaluation-table .supplier-cell { color: #3e5067; font-weight: 600; text-align: left; }
 .evaluation-table .number-cell { color: #364e6b; font-weight: 600; }
 .evaluation-table .grade-pill { min-width: 58px; }
@@ -88,7 +94,9 @@
   .option-copy { min-height: 44px; font-size: 12px; }
   .score-result { flex-wrap: wrap; gap: 12px; }
   .score-hint { flex-basis: 100%; margin-left: 0; }
-  .evaluation-year-actions { align-items: end; }
+  .evaluation-year-actions { align-items: end; flex-wrap: wrap; }
+  .evaluation-list-controls { align-items: stretch; flex-direction: column; }
+  .selection-tools { flex-wrap: wrap; }
   .evaluator-registry-panel { padding: 14px 11px; }
   .registry-form { max-width: none; flex-direction: column; align-items: stretch; }
   .registry-form .form-field { flex-basis: auto; }

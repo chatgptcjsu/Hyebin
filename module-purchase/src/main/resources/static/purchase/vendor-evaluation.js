@@ -1,6 +1,8 @@
 const apiRoot = '/purchase-api';
-const yearSelect = document.getElementById('evaluation-year');
+const yearSelect = document.getElementById('evaluation-year-filter');
+const typeSelect = document.getElementById('evaluation-type-filter');
 const formYear = document.getElementById('form-year');
+const formType = document.getElementById('form-type');
 const form = document.getElementById('evaluation-form');
 const notice = document.getElementById('evaluation-notice');
 const criteriaRoot = document.getElementById('criteria-list');
@@ -11,6 +13,7 @@ const dateInput = document.getElementById('evaluation-date');
 const gradeNames = { A: '우수', B: '양호', C: '보통', D: '미흡' };
 let criteria = [];
 let evaluators = [];
+let selectedEvaluationIds = new Set();
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
@@ -36,6 +39,8 @@ function setupYears() {
   formYear.innerHTML = options;
   yearSelect.value = String(yearNow);
   formYear.value = String(yearNow);
+  typeSelect.value = 'MECHANICAL';
+  formType.value = typeSelect.value;
   dateInput.value = today.toISOString().slice(0, 10);
 }
 
@@ -142,6 +147,7 @@ function resetForm() {
   form.reset();
   document.getElementById('evaluation-id').value = '';
   formYear.value = yearSelect.value;
+  formType.value = typeSelect.value;
   dateInput.value = today.toISOString().slice(0, 10);
   document.getElementById('form-title').textContent = '새 협력업체 평가';
   document.getElementById('edit-state').textContent = '신규 입력';
@@ -149,31 +155,96 @@ function resetForm() {
   updateScorePreview();
 }
 
+function updateSelectionUi() {
+  const count = selectedEvaluationIds.size;
+  document.getElementById('evaluation-selection-count').textContent = `${count}개 선택`;
+  document.getElementById('download-selected-evaluations').disabled = count === 0;
+  const checkboxes = Array.from(listRoot.querySelectorAll('[data-select-id]'));
+  const selectAll = document.getElementById('select-all-evaluations');
+  selectAll.checked = checkboxes.length > 0 && checkboxes.every((checkbox) => checkbox.checked);
+  selectAll.indeterminate = checkboxes.some((checkbox) => checkbox.checked) && !selectAll.checked;
+}
+
 function renderEvaluations(entries) {
+  selectedEvaluationIds = new Set();
   document.getElementById('evaluation-count').textContent = `${entries.length}개 업체`;
-  document.getElementById('list-year').textContent = yearSelect.value;
   if (!entries.length) {
-    listRoot.innerHTML = '<tr><td colspan="6" class="empty-state">선택한 연도의 평가 자료가 없습니다. 새 평가를 입력해 주세요.</td></tr>';
+    listRoot.innerHTML = '<tr><td colspan="8" class="empty-state">선택한 구분·연도의 평가 자료가 없습니다. 새 평가를 입력해 주세요.</td></tr>';
+    updateSelectionUi();
     return;
   }
   listRoot.innerHTML = entries.map((entry) => `<tr>
+    <td><input class="evaluation-row-checkbox" type="checkbox" data-select-id="${Number(entry.purchaseVendorEvaluationId)}" aria-label="${escapeHtml(entry.supplierName)} 평가 선택"></td>
     <td>${escapeHtml(entry.evaluationDate || '—')}</td>
+    <td>${entry.evaluationType === 'MAINTENANCE' ? '유지보수' : '기계설비'}</td>
     <td class="supplier-cell">${escapeHtml(entry.supplierName)}</td>
     <td>${escapeHtml(entry.evaluatorName)}</td>
     <td class="number-cell">${Number(entry.totalScore).toFixed(1)}점</td>
     <td><span class="grade-pill grade-${escapeHtml(String(entry.finalGrade).toLowerCase())}">${escapeHtml(entry.finalGrade)} · ${escapeHtml(gradeNames[entry.finalGrade] || '')}</span></td>
     <td><button class="table-action" type="button" data-edit-id="${Number(entry.purchaseVendorEvaluationId)}">수정</button></td>
   </tr>`).join('');
+  listRoot.querySelectorAll('[data-select-id]').forEach((checkbox) => checkbox.addEventListener('change', () => {
+    if (checkbox.checked) selectedEvaluationIds.add(Number(checkbox.dataset.selectId));
+    else selectedEvaluationIds.delete(Number(checkbox.dataset.selectId));
+    updateSelectionUi();
+  }));
   listRoot.querySelectorAll('[data-edit-id]').forEach((button) => button.addEventListener('click', () => loadForEdit(button.dataset.editId)));
+  updateSelectionUi();
 }
 
 async function loadEvaluations() {
-  listRoot.innerHTML = '<tr><td colspan="6" class="empty-state">평가 자료를 불러오는 중입니다.</td></tr>';
+  selectedEvaluationIds.clear();
+  document.getElementById('select-all-evaluations').checked = false;
+  listRoot.innerHTML = '<tr><td colspan="8" class="empty-state">평가 자료를 불러오는 중입니다.</td></tr>';
+  updateSelectionUi();
+  const query = new URLSearchParams({ year: yearSelect.value, evaluationType: typeSelect.value });
   try {
-    const entries = await requestJson(`${apiRoot}/vendor-evaluations?year=${encodeURIComponent(yearSelect.value)}`, { cache: 'no-store' });
+    const entries = await requestJson(`${apiRoot}/vendor-evaluations?${query.toString()}`, { cache: 'no-store' });
     renderEvaluations(entries);
   } catch (error) {
-    listRoot.innerHTML = `<tr><td colspan="6" class="empty-state">${escapeHtml(error.message)}</td></tr>`;
+    listRoot.innerHTML = `<tr><td colspan="8" class="empty-state">${escapeHtml(error.message)}</td></tr>`;
+  }
+}
+
+async function downloadSelectedEvaluations() {
+  const evaluationIds = Array.from(selectedEvaluationIds);
+  if (!evaluationIds.length) {
+    showNotice('다운로드할 평가서를 먼저 선택해 주세요.', 'error');
+    return;
+  }
+  const button = document.getElementById('download-selected-evaluations');
+  button.disabled = true;
+  try {
+    const response = await fetch(`${apiRoot}/vendor-evaluations/export`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        evaluationYear: Number(yearSelect.value),
+        evaluationType: typeSelect.value,
+        evaluationIds
+      })
+    });
+    if (!response.ok) {
+      let body;
+      try { body = await response.json(); } catch { body = null; }
+      throw new Error(body?.message || body?.error?.message || `Excel 다운로드에 실패했습니다. (HTTP ${response.status})`);
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const typeLabel = typeSelect.value === 'MAINTENANCE' ? '유지보수' : '기계설비';
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${yearSelect.value}년_${typeLabel}_협력업체_평가표.xlsx`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showNotice(`선택한 평가서 ${evaluationIds.length}건을 Excel로 다운로드했습니다.`, 'success');
+  } catch (error) {
+    showNotice(error.message, 'error');
+  } finally {
+    button.disabled = selectedEvaluationIds.size === 0;
   }
 }
 
@@ -182,6 +253,7 @@ async function loadForEdit(id) {
     const entry = await requestJson(`${apiRoot}/vendor-evaluations/${encodeURIComponent(id)}`, { cache: 'no-store' });
     document.getElementById('evaluation-id').value = entry.purchaseVendorEvaluationId;
     formYear.value = String(entry.evaluationYear);
+    formType.value = entry.evaluationType;
     document.getElementById('supplier-name').value = entry.supplierName;
     document.getElementById('evaluator-name').value = evaluators.some((evaluator) => evaluator.evaluatorName === entry.evaluatorName)
       ? entry.evaluatorName : '';
@@ -218,6 +290,7 @@ async function submitEvaluation(event) {
   const id = document.getElementById('evaluation-id').value;
   const payload = {
     evaluationYear: Number(formYear.value),
+    evaluationType: formType.value,
     supplierName: document.getElementById('supplier-name').value.trim(),
     evaluatorName: document.getElementById('evaluator-name').value.trim(),
     evaluationDate: dateInput.value,
@@ -232,6 +305,7 @@ async function submitEvaluation(event) {
       body: JSON.stringify(payload)
     });
     yearSelect.value = String(saved.evaluationYear);
+    typeSelect.value = saved.evaluationType;
     await loadEvaluations();
     resetForm();
     showNotice(`${saved.supplierName} 평가를 ${Number(saved.totalScore).toFixed(1)}점 / ${saved.finalGrade}등급으로 저장했습니다.`, 'success');
@@ -246,11 +320,28 @@ async function initialize() {
   setupYears();
   formYear.addEventListener('change', () => { yearSelect.value = formYear.value; loadEvaluations(); });
   yearSelect.addEventListener('change', () => { formYear.value = yearSelect.value; resetForm(); loadEvaluations(); });
+  typeSelect.addEventListener('change', () => { formType.value = typeSelect.value; resetForm(); loadEvaluations(); });
   document.getElementById('new-evaluation').addEventListener('click', () => {
     resetForm();
     document.getElementById('form-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   document.getElementById('cancel-edit').addEventListener('click', resetForm);
+  document.getElementById('select-all-evaluations').addEventListener('change', (event) => {
+    const checkboxes = listRoot.querySelectorAll('[data-select-id]');
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = event.target.checked;
+      const id = Number(checkbox.dataset.selectId);
+      if (checkbox.checked) selectedEvaluationIds.add(id);
+      else selectedEvaluationIds.delete(id);
+    });
+    updateSelectionUi();
+  });
+  document.getElementById('clear-evaluation-selection').addEventListener('click', () => {
+    selectedEvaluationIds.clear();
+    listRoot.querySelectorAll('[data-select-id]').forEach((checkbox) => { checkbox.checked = false; });
+    updateSelectionUi();
+  });
+  document.getElementById('download-selected-evaluations').addEventListener('click', downloadSelectedEvaluations);
   document.getElementById('register-evaluator-form').addEventListener('submit', registerEvaluator);
   form.addEventListener('submit', submitEvaluation);
   try {

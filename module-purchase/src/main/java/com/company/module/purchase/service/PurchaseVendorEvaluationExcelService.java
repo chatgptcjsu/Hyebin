@@ -16,6 +16,7 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -40,8 +40,9 @@ public class PurchaseVendorEvaluationExcelService {
     private final ObjectMapper objectMapper;
 
     public byte[] export(Integer year, String evaluationType, List<Long> requestedIds) {
+        String type = evaluationType == null ? "" : evaluationType.trim().toUpperCase(java.util.Locale.ROOT);
         if (year == null || year < 2000 || year > 2200
-                || !List.of("MECHANICAL", "MAINTENANCE").contains(evaluationType)
+                || !List.of("MECHANICAL", "MAINTENANCE").contains(type)
                 || requestedIds == null || requestedIds.isEmpty() || requestedIds.size() > MAX_EXPORT_COUNT) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
@@ -51,7 +52,7 @@ public class PurchaseVendorEvaluationExcelService {
         }
         List<PurchaseVendorEvaluation> evaluations = evaluationRepository
             .findByPurchaseVendorEvaluationIdInAndEvaluationYearAndEvaluationTypeAndDeletedYn(
-                ids, year, evaluationType, ACTIVE);
+                ids, year, type, ACTIVE);
         if (evaluations.size() != ids.size()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
@@ -146,7 +147,7 @@ public class PurchaseVendorEvaluationExcelService {
 
     private String sheetName(PurchaseVendorEvaluation evaluation, Map<String, Integer> counts) {
         String base = typeLabel(evaluation.getEvaluationType()) + "_" + evaluation.getSupplierName();
-        String safe = base.replaceAll("[\\\\/?*\\[\\]:]", "_").trim();
+        String safe = WorkbookUtil.createSafeSheetName(base, '_').trim();
         if (safe.isEmpty()) safe = "평가서";
         String suffix = "_" + evaluation.getPurchaseVendorEvaluationId();
         if (safe.length() + suffix.length() > 31) safe = safe.substring(0, 31 - suffix.length());

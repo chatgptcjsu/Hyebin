@@ -21,7 +21,9 @@
 - 선택한 연도의 1~12월 계획 대비·전월 대비 증감액 및 증감 사유 표
 - 미업로드 월도 연간 표에 표시해 연도별 입력 범위를 한눈에 확인
 - 사업부별 실적 합계는 표시하지 않음 (첫 시트에 사업부별 자료가 없음)
-- 연도별 협력업체 평가 입력·수정·목록. 12개 항목 선택을 기준표대로 서버에서 합산하고 A/B/C/D 등급 산정
+- 기계설비/유지보수 구분별 협력업체 평가 입력·수정·목록. 12개 항목 선택을 기준표대로 서버에서 합산하고 A/B/C/D 등급 산정
+- 평가 목록은 구분과 연도로 필터링하고, 선택한 평가서만 Excel로 다운로드
+- 자체 생산 배점은 4지선다이며 `50% 이상 / 비대상` 선택은 4점
 - 협력업체는 연도별 한 건으로 관리하며 같은 연도·업체를 중복 등록하지 않음
 - 평가자 성명을 평가자 등록 목록에 저장해 재사용하고, 평가 입력에서는 등록된 사람만 선택
 - 기존 평가에 저장된 평가자 성명은 스키마 적용 시 평가자 목록으로 초기 등록
@@ -57,10 +59,11 @@
 | `GET` | `/purchase-api/vendor-evaluators` | `PURCHASE_READ` | 등록된 평가자 목록 조회 |
 | `POST` | `/purchase-api/vendor-evaluators` | `PURCHASE_WRITE` | 평가자 성명 등록 |
 | `GET` | `/purchase-api/vendor-evaluations/criteria` | `PURCHASE_READ` | 평가 항목, 선택지 및 배점 기준 조회 |
-| `GET` | `/purchase-api/vendor-evaluations?year=2026` | `PURCHASE_READ` | 해당 연도 협력업체 평가 목록 조회 |
+| `GET` | `/purchase-api/vendor-evaluations?year=2026&evaluationType=MECHANICAL` | `PURCHASE_READ` | 구분과 연도별 협력업체 평가 목록 조회 |
 | `GET` | `/purchase-api/vendor-evaluations/{id}` | `PURCHASE_READ` | 평가 상세 조회 |
 | `POST` | `/purchase-api/vendor-evaluations` | `PURCHASE_WRITE` | 평가 저장. 점수·등급은 서버에서 재계산 |
 | `PUT` | `/purchase-api/vendor-evaluations/{id}` | `PURCHASE_WRITE` | 기존 평가 수정 및 재계산 |
+| `POST` | `/purchase-api/vendor-evaluations/export` | `PURCHASE_READ` | 요청 본문의 `evaluationYear`, `evaluationType`, `evaluationIds`에 해당하는 선택 평가서만 Excel 다운로드 |
 
 `monthlyReasons`는 업로드된 달에는 첫 시트의 각 구분 행을 반환하고, 미업로드 달에는 해당 월의 `uploaded=false` 행을 반환합니다. `/detail-sheet`는 현재 월 배치의 두 번째 시트 자료를 반환합니다. 기존에 상세 시트를 저장하지 않은 월은 해당 원본 Excel을 다시 업로드해야 상세 창을 채울 수 있습니다.
 
@@ -85,7 +88,7 @@
 3. `02_seed_data.sql`에는 업무 seed 데이터가 없습니다.
 4. 운영 데이터 반영은 로그인 후 화면에서 월별 Excel을 업로드하거나 협력업체 평가를 입력합니다.
 
-`01_schema.sql`은 `CREATE TABLE IF NOT EXISTS`를 사용하며 `DROP`, `TRUNCATE`, 데이터 전체 삭제를 포함하지 않습니다. 협력업체 평가자 목록은 기존 평가에 기록된 고유 평가자명을 초기 이관하고, 이 모듈에서는 SQL을 자동 실행하지 않습니다.
+`01_schema.sql`은 기존 평가에 `EVALUATION_TYPE='MECHANICAL'`을 부여하고, 기존 고유 평가자명을 평가자 목록으로 이관하며, 자체 생산 항목의 구 코드(`FIFTY_PERCENT_OR_MORE`, `NOT_APPLICABLE`)를 통합 코드로 바꿉니다. 기존 평가의 중복 기준을 구분·연도·업체명으로 바꾸기 위해 기존 인덱스만 제거하며, 테이블이나 평가 행 전체 삭제는 없습니다. 이 모듈에서는 SQL을 자동 실행하지 않습니다.
 
 ## 플랫폼 통합 시 운영자 작업
 업무 모듈 생성 규칙에 따라 이 변경사항은 기존 플랫폼 설정 파일을 수정하지 않습니다. 플랫폼 운영자가 모듈을 통합할 때 확인할 항목:

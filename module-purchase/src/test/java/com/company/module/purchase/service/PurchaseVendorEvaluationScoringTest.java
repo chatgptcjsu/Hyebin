@@ -54,6 +54,20 @@ class PurchaseVendorEvaluationScoringTest {
     }
 
     @Test
+    void ownProductionUsesFourChoicesAndMergesFiftyPercentWithNotApplicable() {
+        var ownProduction = PurchaseVendorEvaluationScoring.criteria().stream()
+            .filter(criterion -> criterion.code().equals("ownProductionRate"))
+            .findFirst().orElseThrow();
+
+        assertEquals(4, ownProduction.options().size());
+        var combined = ownProduction.options().stream()
+            .filter(option -> option.code().equals("FIFTY_PERCENT_OR_MORE_OR_NOT_APPLICABLE"))
+            .findFirst().orElseThrow();
+        assertEquals("50% 이상 / 비대상", combined.label());
+        assertEquals(new BigDecimal("4"), combined.score());
+    }
+
+    @Test
     void requiresAllTwelveValidSelections() {
         assertThrows(IllegalArgumentException.class,
             () -> PurchaseVendorEvaluationScoring.calculate(Map.of()));

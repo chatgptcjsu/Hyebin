@@ -145,7 +145,7 @@ public class PurchaseController {
     public ResponseEntity<byte[]> exportVendorEvaluations(@Valid @RequestBody PurchaseVendorEvaluationExportRequest request) {
         byte[] workbook = vendorEvaluationExcelService.export(
             request.evaluationYear(), request.evaluationType(), request.evaluationIds());
-        String typeLabel = "MAINTENANCE".equals(request.evaluationType()) ? "유지보수" : "기계설비";
+        String typeLabel = "MAINTENANCE".equalsIgnoreCase(request.evaluationType()) ? "유지보수" : "기계설비";
         String filename = request.evaluationYear() + "년_" + typeLabel + "_협력업체_평가표.xlsx";
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType(

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -127,7 +128,7 @@ public class PurchaseVendorEvaluationService {
     }
 
     private String validateEvaluationType(String evaluationType) {
-        String type = evaluationType == null ? "" : evaluationType.trim().toUpperCase();
+        String type = evaluationType == null ? "" : evaluationType.trim().toUpperCase(Locale.ROOT);
         if (!SUPPORTED_EVALUATION_TYPES.contains(type)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
