@@ -14,6 +14,7 @@ import java.util.Map;
 public class PurchaseVendorEvaluationResponse {
     private Long purchaseVendorEvaluationId;
     private Integer evaluationYear;
+    private String evaluationType;
     private String supplierName;
     private String evaluatorName;
     private LocalDate evaluationDate;

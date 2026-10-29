@@ -34,7 +34,8 @@
           <p class="page-description">평가 항목을 선택하면 배점 기준에 따라 총점과 등급을 자동 계산합니다.</p>
         </div>
         <div class="heading-actions evaluation-year-actions">
-          <label class="year-control" for="evaluation-year"><span>평가 연도</span><select id="evaluation-year"></select></label>
+          <label class="year-control" for="evaluation-type-filter"><span>구분</span><select id="evaluation-type-filter"><option value="MECHANICAL">기계설비</option><option value="MAINTENANCE">유지보수</option></select></label>
+          <label class="year-control" for="evaluation-year-filter"><span>평가 연도</span><select id="evaluation-year-filter"></select></label>
           <button id="new-evaluation" class="primary-button" type="button">＋ 새 평가</button>
         </div>
       </section>
@@ -56,6 +57,7 @@
         <form id="evaluation-form">
           <input id="evaluation-id" type="hidden">
           <div class="evaluation-meta-grid">
+            <label class="form-field"><span>구분</span><select id="form-type" required><option value="MECHANICAL">기계설비</option><option value="MAINTENANCE">유지보수</option></select></label>
             <label class="form-field"><span>평가 연도</span><select id="form-year" required></select></label>
             <label class="form-field"><span>협력업체명</span><input id="supplier-name" type="text" maxlength="200" required placeholder="협력업체명을 입력하세요"></label>
             <label class="form-field"><span>평가자</span><select id="evaluator-name" required><option value="">등록된 평가자를 선택하세요</option></select></label>
@@ -76,13 +78,21 @@
 
       <section class="panel evaluation-list-panel" aria-labelledby="list-title">
         <div class="panel-heading">
-          <div><p class="panel-kicker">ANNUAL RESULTS</p><h2 id="list-title"><span id="list-year">2026</span>년 평가 목록</h2></div>
+          <div><p class="panel-kicker">ANNUAL RESULTS</p><h2 id="list-title">평가 목록</h2></div>
           <span id="evaluation-count" class="count-badge">0개 업체</span>
+        </div>
+        <div class="evaluation-list-controls">
+          <div class="selection-tools">
+            <label class="select-all-control"><input id="select-all-evaluations" type="checkbox"> 전체 선택</label>
+            <button id="clear-evaluation-selection" class="secondary-button" type="button">전체 선택 해제</button>
+            <span id="evaluation-selection-count" class="selection-count">0개 선택</span>
+          </div>
+          <button id="download-selected-evaluations" class="primary-button" type="button" disabled>선택 평가서 Excel 다운로드</button>
         </div>
         <div class="table-wrap">
           <table class="evaluation-table">
-            <thead><tr><th>평가일</th><th>협력업체명</th><th>평가자</th><th>총점</th><th>등급</th><th>관리</th></tr></thead>
-            <tbody id="evaluation-list"><tr><td colspan="6" class="empty-state">평가 자료를 불러오는 중입니다.</td></tr></tbody>
+            <thead><tr><th>선택</th><th>평가일</th><th>구분</th><th>협력업체명</th><th>평가자</th><th>총점</th><th>등급</th><th>관리</th></tr></thead>
+            <tbody id="evaluation-list"><tr><td colspan="8" class="empty-state">평가 자료를 불러오는 중입니다.</td></tr></tbody>
           </table>
         </div>
       </section>

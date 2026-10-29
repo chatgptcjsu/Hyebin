@@ -37,7 +37,7 @@ class PurchaseVendorEvaluationScoringTest {
             Map.entry("productQuality", "GOOD"),
             Map.entry("performance", "GOOD"),
             Map.entry("defectCount", "ZERO"),
-            Map.entry("ownProductionRate", "NOT_APPLICABLE"),
+            Map.entry("ownProductionRate", "FIFTY_PERCENT_OR_MORE_OR_NOT_APPLICABLE"),
             Map.entry("deliveryCompliance", "ONE_TO_TWO_MISSES"),
             Map.entry("afterService", "GOOD"),
             Map.entry("workCooperation", "GOOD")

@@ -21,7 +21,8 @@ import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "purchase_vendor_evaluation", uniqueConstraints = {
-    @UniqueConstraint(name = "UK_PURCHASE_VENDOR_EVAL_YEAR_NAME", columnNames = {"EVALUATION_YEAR", "SUPPLIER_NAME"})
+    @UniqueConstraint(name = "UK_PURCHASE_VENDOR_EVAL_YEAR_TYPE_NAME",
+        columnNames = {"EVALUATION_YEAR", "EVALUATION_TYPE", "SUPPLIER_NAME"})
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -34,6 +35,9 @@ public class PurchaseVendorEvaluation {
 
     @Column(name = "EVALUATION_YEAR", nullable = false)
     private Integer evaluationYear;
+
+    @Column(name = "EVALUATION_TYPE", nullable = false, length = 40)
+    private String evaluationType;
 
     @Column(name = "SUPPLIER_NAME", nullable = false, length = 200)
     private String supplierName;
@@ -78,10 +82,11 @@ public class PurchaseVendorEvaluation {
     private Long deletedBy;
 
     @Builder
-    private PurchaseVendorEvaluation(Integer evaluationYear, String supplierName, String evaluatorName,
-                                     LocalDate evaluationDate, String answersJson, String scoresJson,
+    private PurchaseVendorEvaluation(Integer evaluationYear, String evaluationType, String supplierName,
+                                     String evaluatorName, LocalDate evaluationDate, String answersJson, String scoresJson,
                                      BigDecimal totalScore, String finalGrade, Long createdBy) {
         this.evaluationYear = evaluationYear;
+        this.evaluationType = evaluationType;
         this.supplierName = supplierName;
         this.evaluatorName = evaluatorName;
         this.evaluationDate = evaluationDate;
@@ -104,9 +109,10 @@ public class PurchaseVendorEvaluation {
         this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
-    public void updateEvaluation(String supplierName, String evaluatorName, LocalDate evaluationDate,
-                                 String answersJson, String scoresJson, BigDecimal totalScore,
-                                 String finalGrade, Long updatedBy) {
+    public void updateEvaluation(String evaluationType, String supplierName, String evaluatorName,
+                                 LocalDate evaluationDate, String answersJson, String scoresJson,
+                                 BigDecimal totalScore, String finalGrade, Long updatedBy) {
+        this.evaluationType = evaluationType;
         this.supplierName = supplierName;
         this.evaluatorName = evaluatorName;
         this.evaluationDate = evaluationDate;

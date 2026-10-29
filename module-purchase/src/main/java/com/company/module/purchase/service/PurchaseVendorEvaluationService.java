@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +27,7 @@ import java.util.Map;
 public class PurchaseVendorEvaluationService {
 
     private static final String ACTIVE = "N";
+    private static final Set<String> SUPPORTED_EVALUATION_TYPES = Set.of("MECHANICAL", "MAINTENANCE");
 
     private final PurchaseVendorEvaluationRepository evaluationRepository;
     private final PurchaseVendorEvaluatorMasterRepository evaluatorMasterRepository;
@@ -36,10 +38,11 @@ public class PurchaseVendorEvaluationService {
         return PurchaseVendorEvaluationScoring.criteria();
     }
 
-    public List<PurchaseVendorEvaluationResponse> getEvaluations(Integer year) {
+    public List<PurchaseVendorEvaluationResponse> getEvaluations(Integer year, String evaluationType) {
         validateYear(year);
+        String type = validateEvaluationType(evaluationType);
         return evaluationRepository
-            .findByEvaluationYearAndDeletedYnOrderByEvaluationDateDescCreatedAtDesc(year, ACTIVE)
+            .findByEvaluationYearAndEvaluationTypeAndDeletedYnOrderByEvaluationDateDescCreatedAtDesc(year, type, ACTIVE)
             .stream().map(this::toResponse).toList();
     }
 
@@ -52,14 +55,15 @@ public class PurchaseVendorEvaluationService {
     @Transactional
     public PurchaseVendorEvaluationResponse create(PurchaseVendorEvaluationRequest request) {
         ValidatedEvaluation validated = validate(request);
-        if (evaluationRepository.existsByEvaluationYearAndSupplierNameAndDeletedYn(
-                validated.year(), validated.supplierName(), ACTIVE)) {
+        if (evaluationRepository.existsByEvaluationYearAndEvaluationTypeAndSupplierNameAndDeletedYn(
+                validated.year(), validated.evaluationType(), validated.supplierName(), ACTIVE)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
         Long userId = currentUserProvider.getCurrentUserId();
         try {
             PurchaseVendorEvaluation saved = evaluationRepository.save(PurchaseVendorEvaluation.builder()
                 .evaluationYear(validated.year())
+                .evaluationType(validated.evaluationType())
                 .supplierName(validated.supplierName())
                 .evaluatorName(validated.evaluatorName())
                 .evaluationDate(request.evaluationDate())
@@ -81,13 +85,15 @@ public class PurchaseVendorEvaluationService {
         PurchaseVendorEvaluation evaluation = evaluationRepository
             .findByPurchaseVendorEvaluationIdAndDeletedYn(id, ACTIVE)
             .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
-        boolean nameTaken = evaluationRepository.existsByEvaluationYearAndSupplierNameAndDeletedYn(
-            validated.year(), validated.supplierName(), ACTIVE);
+        boolean nameTaken = evaluationRepository.existsByEvaluationYearAndEvaluationTypeAndSupplierNameAndDeletedYn(
+            validated.year(), validated.evaluationType(), validated.supplierName(), ACTIVE);
         if (nameTaken && (!evaluation.getEvaluationYear().equals(validated.year())
+                || !evaluation.getEvaluationType().equals(validated.evaluationType())
                 || !evaluation.getSupplierName().equalsIgnoreCase(validated.supplierName()))) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
-        evaluation.updateEvaluation(validated.supplierName(), validated.evaluatorName(), request.evaluationDate(),
+        evaluation.updateEvaluation(validated.evaluationType(), validated.supplierName(), validated.evaluatorName(),
+            request.evaluationDate(),
             writeJson(request.answers()), writeJson(validated.calculation().criteria()),
             validated.calculation().totalScore(), validated.calculation().grade(), currentUserProvider.getCurrentUserId());
         return toResponse(evaluation);
@@ -96,6 +102,7 @@ public class PurchaseVendorEvaluationService {
     private ValidatedEvaluation validate(PurchaseVendorEvaluationRequest request) {
         if (request == null) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         validateYear(request.evaluationYear());
+        String evaluationType = validateEvaluationType(request.evaluationType());
         String supplierName = request.supplierName() == null ? "" : request.supplierName().trim();
         String evaluatorName = request.evaluatorName() == null ? "" : request.evaluatorName().trim();
         if (supplierName.isEmpty() || supplierName.length() > 200 || evaluatorName.isEmpty() || evaluatorName.length() > 100
@@ -106,7 +113,7 @@ public class PurchaseVendorEvaluationService {
             .findByEvaluatorNameAndDeletedYn(evaluatorName, ACTIVE)
             .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
         try {
-            return new ValidatedEvaluation(request.evaluationYear(), supplierName,
+            return new ValidatedEvaluation(request.evaluationYear(), evaluationType, supplierName,
                 registeredEvaluator.getEvaluatorName(), PurchaseVendorEvaluationScoring.calculate(request.answers()));
         } catch (IllegalArgumentException exception) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
@@ -119,6 +126,14 @@ public class PurchaseVendorEvaluationService {
         }
     }
 
+    private String validateEvaluationType(String evaluationType) {
+        String type = evaluationType == null ? "" : evaluationType.trim().toUpperCase();
+        if (!SUPPORTED_EVALUATION_TYPES.contains(type)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        return type;
+    }
+
     private PurchaseVendorEvaluationResponse toResponse(PurchaseVendorEvaluation evaluation) {
         try {
             Map<String, String> answers = objectMapper.readValue(evaluation.getAnswersJson(),
@@ -128,6 +143,7 @@ public class PurchaseVendorEvaluationService {
             return PurchaseVendorEvaluationResponse.builder()
                 .purchaseVendorEvaluationId(evaluation.getPurchaseVendorEvaluationId())
                 .evaluationYear(evaluation.getEvaluationYear())
+                .evaluationType(evaluation.getEvaluationType())
                 .supplierName(evaluation.getSupplierName())
                 .evaluatorName(evaluation.getEvaluatorName())
                 .evaluationDate(evaluation.getEvaluationDate())
@@ -149,6 +165,6 @@ public class PurchaseVendorEvaluationService {
         }
     }
 
-    private record ValidatedEvaluation(Integer year, String supplierName, String evaluatorName,
+    private record ValidatedEvaluation(Integer year, String evaluationType, String supplierName, String evaluatorName,
                                        PurchaseVendorEvaluationScoring.Calculation calculation) { }
 }

@@ -7,6 +7,7 @@ import com.company.module.purchase.dto.PurchaseUploadHistoryResponse;
 import com.company.module.purchase.dto.PurchaseUploadResponse;
 import com.company.module.purchase.dto.PurchaseVendorEvaluationRequest;
 import com.company.module.purchase.dto.PurchaseVendorEvaluationResponse;
+import com.company.module.purchase.dto.PurchaseVendorEvaluationExportRequest;
 import com.company.module.purchase.dto.PurchaseVendorEvaluatorOption;
 import com.company.module.purchase.dto.PurchaseVendorEvaluatorRegisterRequest;
 import com.company.module.purchase.service.PurchaseDashboardService;
@@ -15,6 +16,7 @@ import com.company.module.purchase.service.PurchaseSummaryExcelService;
 import com.company.module.purchase.service.PurchaseUploadHistoryService;
 import com.company.module.purchase.service.PurchaseUploadService;
 import com.company.module.purchase.service.PurchaseVendorEvaluationService;
+import com.company.module.purchase.service.PurchaseVendorEvaluationExcelService;
 import com.company.module.purchase.service.PurchaseVendorEvaluatorRegistryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -53,6 +55,7 @@ public class PurchaseController {
     private final PurchaseSummaryExcelService summaryExcelService;
     private final PurchaseUploadHistoryService uploadHistoryService;
     private final PurchaseVendorEvaluationService vendorEvaluationService;
+    private final PurchaseVendorEvaluationExcelService vendorEvaluationExcelService;
     private final PurchaseVendorEvaluatorRegistryService vendorEvaluatorRegistryService;
 
     @PostMapping("/uploads")
@@ -126,14 +129,31 @@ public class PurchaseController {
     @GetMapping("/vendor-evaluations")
     @PreAuthorize("hasAuthority('PURCHASE_READ')")
     public ResponseEntity<ApiResponse<List<PurchaseVendorEvaluationResponse>>> vendorEvaluations(
-            @RequestParam("year") @Min(2000) @Max(2200) Integer year) {
-        return ResponseEntity.ok(ApiResponse.success(vendorEvaluationService.getEvaluations(year)));
+            @RequestParam("year") @Min(2000) @Max(2200) Integer year,
+            @RequestParam("evaluationType") String evaluationType) {
+        return ResponseEntity.ok(ApiResponse.success(vendorEvaluationService.getEvaluations(year, evaluationType)));
     }
 
     @GetMapping("/vendor-evaluations/{id}")
     @PreAuthorize("hasAuthority('PURCHASE_READ')")
     public ResponseEntity<ApiResponse<PurchaseVendorEvaluationResponse>> vendorEvaluation(@PathVariable("id") @Min(1) Long id) {
         return ResponseEntity.ok(ApiResponse.success(vendorEvaluationService.getEvaluation(id)));
+    }
+
+    @PostMapping("/vendor-evaluations/export")
+    @PreAuthorize("hasAuthority('PURCHASE_READ')")
+    public ResponseEntity<byte[]> exportVendorEvaluations(@Valid @RequestBody PurchaseVendorEvaluationExportRequest request) {
+        byte[] workbook = vendorEvaluationExcelService.export(
+            request.evaluationYear(), request.evaluationType(), request.evaluationIds());
+        String typeLabel = "MAINTENANCE".equals(request.evaluationType()) ? "유지보수" : "기계설비";
+        String filename = request.evaluationYear() + "년_" + typeLabel + "_협력업체_평가표.xlsx";
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                ContentDisposition.attachment().filename(filename, StandardCharsets.UTF_8).build().toString())
+            .header(HttpHeaders.CACHE_CONTROL, "no-store")
+            .body(workbook);
     }
 
     @PostMapping("/vendor-evaluations")
