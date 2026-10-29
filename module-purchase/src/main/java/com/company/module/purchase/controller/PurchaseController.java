@@ -7,12 +7,15 @@ import com.company.module.purchase.dto.PurchaseUploadHistoryResponse;
 import com.company.module.purchase.dto.PurchaseUploadResponse;
 import com.company.module.purchase.dto.PurchaseVendorEvaluationRequest;
 import com.company.module.purchase.dto.PurchaseVendorEvaluationResponse;
+import com.company.module.purchase.dto.PurchaseVendorEvaluatorOption;
+import com.company.module.purchase.dto.PurchaseVendorEvaluatorRegisterRequest;
 import com.company.module.purchase.service.PurchaseDashboardService;
 import com.company.module.purchase.service.PurchaseDetailSheetService;
 import com.company.module.purchase.service.PurchaseSummaryExcelService;
 import com.company.module.purchase.service.PurchaseUploadHistoryService;
 import com.company.module.purchase.service.PurchaseUploadService;
 import com.company.module.purchase.service.PurchaseVendorEvaluationService;
+import com.company.module.purchase.service.PurchaseVendorEvaluatorRegistryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -50,6 +53,7 @@ public class PurchaseController {
     private final PurchaseSummaryExcelService summaryExcelService;
     private final PurchaseUploadHistoryService uploadHistoryService;
     private final PurchaseVendorEvaluationService vendorEvaluationService;
+    private final PurchaseVendorEvaluatorRegistryService vendorEvaluatorRegistryService;
 
     @PostMapping("/uploads")
     @PreAuthorize("hasAuthority('PURCHASE_WRITE')")
@@ -97,6 +101,20 @@ public class PurchaseController {
                 ContentDisposition.attachment().filename(file.filename(), StandardCharsets.UTF_8).build().toString())
             .header(HttpHeaders.CACHE_CONTROL, "no-store")
             .body(file.bytes());
+    }
+
+    @GetMapping("/vendor-evaluators")
+    @PreAuthorize("hasAuthority('PURCHASE_READ')")
+    public ResponseEntity<ApiResponse<List<PurchaseVendorEvaluatorOption>>> vendorEvaluators() {
+        return ResponseEntity.ok(ApiResponse.success(vendorEvaluatorRegistryService.getEvaluators()));
+    }
+
+    @PostMapping("/vendor-evaluators")
+    @PreAuthorize("hasAuthority('PURCHASE_WRITE')")
+    public ResponseEntity<ApiResponse<PurchaseVendorEvaluatorOption>> registerVendorEvaluator(
+            @Valid @RequestBody PurchaseVendorEvaluatorRegisterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(ApiResponse.success(vendorEvaluatorRegistryService.register(request)));
     }
 
     @GetMapping("/vendor-evaluations/criteria")

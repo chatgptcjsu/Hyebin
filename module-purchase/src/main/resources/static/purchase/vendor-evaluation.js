@@ -10,6 +10,7 @@ const yearNow = today.getFullYear();
 const dateInput = document.getElementById('evaluation-date');
 const gradeNames = { A: '우수', B: '양호', C: '보통', D: '미흡' };
 let criteria = [];
+let evaluators = [];
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
@@ -90,6 +91,53 @@ function setGrade(grade) {
   badge.className = `grade-pill ${grade ? `grade-${grade.toLowerCase()}` : 'grade-pending'}`;
 }
 
+function renderEvaluators(selectedName = '') {
+  const select = document.getElementById('evaluator-name');
+  select.innerHTML = '<option value="">등록된 평가자를 선택하세요</option>' + evaluators
+    .map((evaluator) => `<option value="${escapeHtml(evaluator.evaluatorName)}">${escapeHtml(evaluator.evaluatorName)}</option>`)
+    .join('');
+  select.value = evaluators.some((evaluator) => evaluator.evaluatorName === selectedName) ? selectedName : '';
+  const root = document.getElementById('registered-evaluator-list');
+  document.getElementById('registered-evaluator-count').textContent = `${evaluators.length}명 등록`;
+  root.innerHTML = evaluators.length
+    ? evaluators.map((evaluator) => `<span class="evaluator-chip">${escapeHtml(evaluator.evaluatorName)}</span>`).join('')
+    : '<span class="registry-empty">등록된 평가자가 없습니다.</span>';
+}
+
+async function loadEvaluators() {
+  evaluators = await requestJson(`${apiRoot}/vendor-evaluators`, { cache: 'no-store' });
+  renderEvaluators();
+}
+
+async function registerEvaluator(event) {
+  event.preventDefault();
+  const input = document.getElementById('new-evaluator-name');
+  const evaluatorName = input.value.trim();
+  if (!evaluatorName) return;
+  if (evaluators.some((evaluator) => evaluator.evaluatorName.toLocaleLowerCase() === evaluatorName.toLocaleLowerCase())) {
+    showNotice('이미 등록된 평가자명입니다.', 'error');
+    return;
+  }
+  const button = document.getElementById('register-evaluator-button');
+  button.disabled = true;
+  try {
+    const registered = await requestJson(`${apiRoot}/vendor-evaluators`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ evaluatorName })
+    });
+    const currentEvaluator = document.getElementById('evaluator-name').value;
+    evaluators = [...evaluators, registered].sort((left, right) => left.evaluatorName.localeCompare(right.evaluatorName, 'ko'));
+    renderEvaluators(currentEvaluator || registered.evaluatorName);
+    input.value = '';
+    showNotice(`${registered.evaluatorName} 평가자를 등록했습니다.`, 'success');
+  } catch (error) {
+    showNotice(error.message, 'error');
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function resetForm() {
   form.reset();
   document.getElementById('evaluation-id').value = '';
@@ -135,7 +183,11 @@ async function loadForEdit(id) {
     document.getElementById('evaluation-id').value = entry.purchaseVendorEvaluationId;
     formYear.value = String(entry.evaluationYear);
     document.getElementById('supplier-name').value = entry.supplierName;
-    document.getElementById('evaluator-name').value = entry.evaluatorName;
+    document.getElementById('evaluator-name').value = evaluators.some((evaluator) => evaluator.evaluatorName === entry.evaluatorName)
+      ? entry.evaluatorName : '';
+    if (!document.getElementById('evaluator-name').value) {
+      showNotice('이 평가자의 이름이 등록 목록에 없습니다. 아래에서 먼저 등록한 뒤 선택해 주세요.', 'info');
+    }
     dateInput.value = entry.evaluationDate;
     Object.entries(entry.answers || {}).forEach(([code, value]) => {
       const input = criteriaRoot.querySelector(`input[name="answer-${CSS.escape(code)}"][value="${CSS.escape(value)}"]`);
@@ -199,15 +251,21 @@ async function initialize() {
     document.getElementById('form-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   document.getElementById('cancel-edit').addEventListener('click', resetForm);
+  document.getElementById('register-evaluator-form').addEventListener('submit', registerEvaluator);
   form.addEventListener('submit', submitEvaluation);
+  try {
+    await loadEvaluators();
+  } catch (error) {
+    showNotice(`등록된 평가자를 불러오지 못했습니다: ${error.message}`, 'error');
+  }
   try {
     criteria = await requestJson(`${apiRoot}/vendor-evaluations/criteria`, { cache: 'no-store' });
     renderCriteria();
-    await loadEvaluations();
   } catch (error) {
     criteriaRoot.innerHTML = `<p class="empty-inline">평가 기준을 불러오지 못했습니다: ${escapeHtml(error.message)}</p>`;
     showNotice(error.message, 'error');
   }
+  await loadEvaluations();
 }
 
 initialize();

@@ -23,6 +23,8 @@
 - 사업부별 실적 합계는 표시하지 않음 (첫 시트에 사업부별 자료가 없음)
 - 연도별 협력업체 평가 입력·수정·목록. 12개 항목 선택을 기준표대로 서버에서 합산하고 A/B/C/D 등급 산정
 - 협력업체는 연도별 한 건으로 관리하며 같은 연도·업체를 중복 등록하지 않음
+- 평가자 성명을 평가자 등록 목록에 저장해 재사용하고, 평가 입력에서는 등록된 사람만 선택
+- 기존 평가에 저장된 평가자 성명은 스키마 적용 시 평가자 목록으로 초기 등록
 - 동일 연월에 파일을 재업로드하면 SHA-256이 같더라도 신규 업로드 버전으로 추가
 - 해당 연월 자료가 있으면 먼저 확인을 요청하고, 확인 후 신규 버전을 현재 자료로 반영. 화면 이력에는 월별 최신 버전만 표시
 - 업로드 원본 Excel은 `purchase_upload_file`에 저장하고 이력에서 다운로드 가능. 원본 보관 도입 전의 재업로드도 신규 버전으로 기록
@@ -36,6 +38,7 @@
 | `purchase_category` | 첫 번째 시트의 구분별 구매실적 요약 행 |
 | `purchase_detail_sheet` | 두 번째 시트의 업체별 표, 합계, 주요 이슈·개선 방향 JSON 데이터 |
 | `purchase_vendor_evaluation` | 연도별 협력업체 평가 답변, 항목별 점수, 총점 및 등급 |
+| `purchase_vendor_evaluator_master` | 평가 입력에서 선택할 수 있는 공용 평가자 성명 목록 |
 
 업로드 배치와 월별 상세의 기존 이력은 보존합니다. 논리 삭제는 `DELETED_YN` 공통 컬럼 기준이며 물리 삭제는 사용하지 않습니다.
 
@@ -51,6 +54,8 @@
 | `GET` | `/purchase-api/upload-history?year=2026` | `PURCHASE_READ` | 연도별 월별 현재 업로드 자료(최신 버전, 업로드 시각 KST) 조회 |
 | `GET` | `/purchase-api/upload-history/{uploadBatchId}/file` | `PURCHASE_READ` | 업로드된 원본 Excel 다운로드 |
 | `GET` | `/purchase-api/detail-sheet?year=2026&month=9` | `PURCHASE_READ` | 해당 월 현재 업로드 버전의 두 번째 시트 상세 행·합계·이슈 조회 |
+| `GET` | `/purchase-api/vendor-evaluators` | `PURCHASE_READ` | 등록된 평가자 목록 조회 |
+| `POST` | `/purchase-api/vendor-evaluators` | `PURCHASE_WRITE` | 평가자 성명 등록 |
 | `GET` | `/purchase-api/vendor-evaluations/criteria` | `PURCHASE_READ` | 평가 항목, 선택지 및 배점 기준 조회 |
 | `GET` | `/purchase-api/vendor-evaluations?year=2026` | `PURCHASE_READ` | 해당 연도 협력업체 평가 목록 조회 |
 | `GET` | `/purchase-api/vendor-evaluations/{id}` | `PURCHASE_READ` | 평가 상세 조회 |
@@ -80,7 +85,7 @@
 3. `02_seed_data.sql`에는 업무 seed 데이터가 없습니다.
 4. 운영 데이터 반영은 로그인 후 화면에서 월별 Excel을 업로드하거나 협력업체 평가를 입력합니다.
 
-`01_schema.sql`은 `CREATE TABLE IF NOT EXISTS`를 사용하며 `DROP`, `TRUNCATE`, 데이터 전체 삭제를 포함하지 않습니다. 이 모듈에서는 SQL을 자동 실행하지 않습니다.
+`01_schema.sql`은 `CREATE TABLE IF NOT EXISTS`를 사용하며 `DROP`, `TRUNCATE`, 데이터 전체 삭제를 포함하지 않습니다. 협력업체 평가자 목록은 기존 평가에 기록된 고유 평가자명을 초기 이관하고, 이 모듈에서는 SQL을 자동 실행하지 않습니다.
 
 ## 플랫폼 통합 시 운영자 작업
 업무 모듈 생성 규칙에 따라 이 변경사항은 기존 플랫폼 설정 파일을 수정하지 않습니다. 플랫폼 운영자가 모듈을 통합할 때 확인할 항목:

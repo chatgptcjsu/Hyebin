@@ -58,7 +58,7 @@
           <div class="evaluation-meta-grid">
             <label class="form-field"><span>평가 연도</span><select id="form-year" required></select></label>
             <label class="form-field"><span>협력업체명</span><input id="supplier-name" type="text" maxlength="200" required placeholder="협력업체명을 입력하세요"></label>
-            <label class="form-field"><span>평가자</span><input id="evaluator-name" type="text" maxlength="100" required placeholder="평가자 성명"></label>
+            <label class="form-field"><span>평가자</span><select id="evaluator-name" required><option value="">등록된 평가자를 선택하세요</option></select></label>
             <label class="form-field"><span>평가일</span><input id="evaluation-date" type="date" required></label>
           </div>
           <div id="criteria-list" class="criteria-list" aria-live="polite"><p class="empty-inline">평가 항목을 불러오는 중입니다.</p></div>
@@ -85,6 +85,19 @@
             <tbody id="evaluation-list"><tr><td colspan="6" class="empty-state">평가 자료를 불러오는 중입니다.</td></tr></tbody>
           </table>
         </div>
+      </section>
+
+      <section class="panel evaluator-registry-panel" aria-labelledby="evaluator-registry-title">
+        <div class="panel-heading">
+          <div><p class="panel-kicker">EVALUATOR DIRECTORY</p><h2 id="evaluator-registry-title">평가자명 등록</h2></div>
+          <span id="registered-evaluator-count" class="count-badge">0명 등록</span>
+        </div>
+        <p class="registry-description">한 번 등록한 평가자명은 이후 평가 입력에서 선택할 수 있습니다.</p>
+        <form id="register-evaluator-form" class="registry-form">
+          <label class="form-field" for="new-evaluator-name"><span>새 평가자명</span><input id="new-evaluator-name" type="text" maxlength="100" required placeholder="평가자 성명을 입력하세요"></label>
+          <button id="register-evaluator-button" class="primary-button" type="submit">평가자 등록</button>
+        </form>
+        <div id="registered-evaluator-list" class="registry-list" aria-live="polite"><span class="registry-empty">등록된 평가자가 없습니다.</span></div>
       </section>
 
       <footer class="page-footer">협력업체 평가 <span>·</span> 서버에서 배점 기준을 다시 계산하여 저장합니다.</footer>

@@ -6,7 +6,9 @@ import com.company.core.security.CurrentUserProvider;
 import com.company.module.purchase.dto.PurchaseVendorEvaluationRequest;
 import com.company.module.purchase.dto.PurchaseVendorEvaluationResponse;
 import com.company.module.purchase.entity.PurchaseVendorEvaluation;
+import com.company.module.purchase.entity.PurchaseVendorEvaluatorMaster;
 import com.company.module.purchase.repository.PurchaseVendorEvaluationRepository;
+import com.company.module.purchase.repository.PurchaseVendorEvaluatorMasterRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +28,7 @@ public class PurchaseVendorEvaluationService {
     private static final String ACTIVE = "N";
 
     private final PurchaseVendorEvaluationRepository evaluationRepository;
+    private final PurchaseVendorEvaluatorMasterRepository evaluatorMasterRepository;
     private final ObjectMapper objectMapper;
     private final CurrentUserProvider currentUserProvider;
 
@@ -99,9 +102,12 @@ public class PurchaseVendorEvaluationService {
                 || request.evaluationDate() == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
+        PurchaseVendorEvaluatorMaster registeredEvaluator = evaluatorMasterRepository
+            .findByEvaluatorNameAndDeletedYn(evaluatorName, ACTIVE)
+            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
         try {
-            return new ValidatedEvaluation(request.evaluationYear(), supplierName, evaluatorName,
-                PurchaseVendorEvaluationScoring.calculate(request.answers()));
+            return new ValidatedEvaluation(request.evaluationYear(), supplierName,
+                registeredEvaluator.getEvaluatorName(), PurchaseVendorEvaluationScoring.calculate(request.answers()));
         } catch (IllegalArgumentException exception) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
