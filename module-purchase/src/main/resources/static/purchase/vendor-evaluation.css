@@ -22,6 +22,11 @@
 .form-field { display: flex; min-width: 0; flex-direction: column; gap: 7px; color: #6f7e91; font-size: 12px; font-weight: 600; }
 .form-field input, .form-field select { width: 100%; height: 40px; padding: 0 11px; border: 1px solid #dfe5ed; border-radius: 6px; outline: none; background: #fff; color: #34445a; font-size: 13px; }
 .form-field input:focus, .form-field select:focus { border-color: #76a9eb; box-shadow: 0 0 0 3px rgb(50 115 217 / 10%); }
+.evaluation-meta-grid .form-field,
+.evaluation-meta-grid .form-field > span { text-align: center; }
+.evaluation-meta-grid .form-field input,
+.evaluation-meta-grid .form-field select { text-align: center; text-align-last: center; }
+.evaluation-meta-grid .form-field input[type="date"]::-webkit-datetime-edit { text-align: center; }
 .criteria-list { margin-top: 19px; }
 .criteria-section + .criteria-section { margin-top: 17px; }
 .criteria-section-heading { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
@@ -62,7 +67,7 @@
 .evaluation-table { min-width: 1080px; }
 .evaluation-table th, .evaluation-table td { font-size: 12px; text-align: center; }
 .evaluation-table td:first-child { width: 55px; }
-.evaluation-table .supplier-cell { color: #3e5067; font-weight: 600; text-align: left; }
+.evaluation-table .supplier-cell { color: #3e5067; font-weight: 600; text-align: center; }
 .evaluation-table .number-cell { color: #364e6b; font-weight: 600; }
 .evaluation-table .grade-pill { min-width: 58px; }
 .table-action { height: 31px; padding: 0 11px; border: 1px solid #dce4ed; border-radius: 5px; background: #fff; color: #53657b; font-size: 11px; font-weight: 600; }

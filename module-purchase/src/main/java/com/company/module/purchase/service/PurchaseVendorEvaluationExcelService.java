@@ -157,7 +157,7 @@ public class PurchaseVendorEvaluationExcelService {
     }
 
     private String typeLabel(String type) {
-        return "MAINTENANCE".equals(type) ? "유지보수" : "기계설비";
+        return "MAINTENANCE".equals(type) ? "유지보수" : "기계설비공사";
     }
 
     private void setText(Row row, int column, String value, CellStyle style) {

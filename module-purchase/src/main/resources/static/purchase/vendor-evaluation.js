@@ -176,7 +176,7 @@ function renderEvaluations(entries) {
   listRoot.innerHTML = entries.map((entry) => `<tr>
     <td><input class="evaluation-row-checkbox" type="checkbox" data-select-id="${Number(entry.purchaseVendorEvaluationId)}" aria-label="${escapeHtml(entry.supplierName)} 평가 선택"></td>
     <td>${escapeHtml(entry.evaluationDate || '—')}</td>
-    <td>${entry.evaluationType === 'MAINTENANCE' ? '유지보수' : '기계설비'}</td>
+    <td>${entry.evaluationType === 'MAINTENANCE' ? '유지보수' : '기계설비공사'}</td>
     <td class="supplier-cell">${escapeHtml(entry.supplierName)}</td>
     <td>${escapeHtml(entry.evaluatorName)}</td>
     <td class="number-cell">${Number(entry.totalScore).toFixed(1)}점</td>
@@ -232,7 +232,7 @@ async function downloadSelectedEvaluations() {
     }
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
-    const typeLabel = typeSelect.value === 'MAINTENANCE' ? '유지보수' : '기계설비';
+    const typeLabel = typeSelect.value === 'MAINTENANCE' ? '유지보수' : '기계설비공사';
     const link = document.createElement('a');
     link.href = url;
     link.download = `${yearSelect.value}년_${typeLabel}_협력업체_평가표.xlsx`;
