@@ -36,7 +36,7 @@ public class PurchaseVendorEvaluation {
     @Column(name = "EVALUATION_YEAR", nullable = false)
     private Integer evaluationYear;
 
-    @Column(name = "EVALUATION_TYPE", nullable = false, length = 40)
+    @Column(name = "EVALUATION_TYPE", nullable = false, length = 100)
     private String evaluationType;
 
     @Column(name = "SUPPLIER_NAME", nullable = false, length = 200)

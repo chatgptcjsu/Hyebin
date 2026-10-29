@@ -34,7 +34,7 @@
           <p class="page-description">평가 항목을 선택하면 배점 기준에 따라 총점과 등급을 자동 계산합니다.</p>
         </div>
         <div class="heading-actions evaluation-year-actions">
-          <label class="year-control" for="evaluation-type-filter"><span>구분</span><select id="evaluation-type-filter"><option value="MECHANICAL">기계설비공사</option><option value="MAINTENANCE">유지보수</option></select></label>
+          <label class="year-control" for="evaluation-type-filter"><span>평가서 양식</span><select id="evaluation-type-filter"></select></label>
           <label class="year-control" for="evaluation-year-filter"><span>평가 연도</span><select id="evaluation-year-filter"></select></label>
           <button id="new-evaluation" class="primary-button" type="button">＋ 새 평가</button>
         </div>
@@ -51,13 +51,12 @@
 
       <section class="panel evaluation-form-panel" aria-labelledby="form-title">
         <div class="panel-heading evaluation-panel-heading">
-          <div><p class="panel-kicker">EVALUATION FORM</p><h2 id="form-title">새 협력업체 평가</h2></div>
-          <span id="edit-state" class="edit-state">신규 입력</span>
+          <div><p class="panel-kicker">EVALUATION FORM</p><h2 id="form-title">협력업체 평가</h2></div>
+          <label class="form-type-picker" for="form-type"><span>평가서 양식</span><select id="form-type" required aria-label="평가서 양식 선택"></select></label>
         </div>
         <form id="evaluation-form">
           <input id="evaluation-id" type="hidden">
           <div class="evaluation-meta-grid">
-            <label class="form-field"><span>구분</span><select id="form-type" required><option value="MECHANICAL">기계설비공사</option><option value="MAINTENANCE">유지보수</option></select></label>
             <label class="form-field"><span>평가 연도</span><select id="form-year" required></select></label>
             <label class="form-field"><span>협력업체명</span><input id="supplier-name" type="text" maxlength="200" required placeholder="협력업체명을 입력하세요"></label>
             <label class="form-field"><span>평가자</span><select id="evaluator-name" required><option value="">등록된 평가자를 선택하세요</option></select></label>
@@ -108,6 +107,19 @@
           <button id="register-evaluator-button" class="primary-button" type="submit">평가자 등록</button>
         </form>
         <div id="registered-evaluator-list" class="registry-list" aria-live="polite"><span class="registry-empty">등록된 평가자가 없습니다.</span></div>
+      </section>
+
+      <section class="panel evaluator-registry-panel" aria-labelledby="form-type-registry-title">
+        <div class="panel-heading">
+          <div><p class="panel-kicker">EVALUATION FORM DIRECTORY</p><h2 id="form-type-registry-title">평가서 양식 등록</h2></div>
+          <span id="registered-form-type-count" class="count-badge">0개 등록</span>
+        </div>
+        <p class="registry-description">양식명을 등록하면 평가 입력과 목록 필터에서 선택할 수 있습니다.</p>
+        <form id="register-form-type-form" class="registry-form">
+          <label class="form-field" for="new-form-type-name"><span>새 평가서 양식명</span><input id="new-form-type-name" type="text" maxlength="100" required placeholder="예: 기계설비공사, 유지보수, 저장/소모"></label>
+          <button id="register-form-type-button" class="primary-button" type="submit">양식 등록</button>
+        </form>
+        <div id="registered-form-type-list" class="registry-list" aria-live="polite"><span class="registry-empty">등록된 평가서 양식이 없습니다.</span></div>
       </section>
 
       <footer class="page-footer">협력업체 평가 <span>·</span> 서버에서 배점 기준을 다시 계산하여 저장합니다.</footer>

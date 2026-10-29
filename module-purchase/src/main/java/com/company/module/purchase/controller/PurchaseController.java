@@ -8,6 +8,8 @@ import com.company.module.purchase.dto.PurchaseUploadResponse;
 import com.company.module.purchase.dto.PurchaseVendorEvaluationRequest;
 import com.company.module.purchase.dto.PurchaseVendorEvaluationResponse;
 import com.company.module.purchase.dto.PurchaseVendorEvaluationExportRequest;
+import com.company.module.purchase.dto.PurchaseVendorEvaluationFormTypeOption;
+import com.company.module.purchase.dto.PurchaseVendorEvaluationFormTypeRequest;
 import com.company.module.purchase.dto.PurchaseVendorEvaluatorOption;
 import com.company.module.purchase.dto.PurchaseVendorEvaluatorRegisterRequest;
 import com.company.module.purchase.service.PurchaseDashboardService;
@@ -17,6 +19,7 @@ import com.company.module.purchase.service.PurchaseUploadHistoryService;
 import com.company.module.purchase.service.PurchaseUploadService;
 import com.company.module.purchase.service.PurchaseVendorEvaluationService;
 import com.company.module.purchase.service.PurchaseVendorEvaluationExcelService;
+import com.company.module.purchase.service.PurchaseVendorEvaluationFormTypeRegistryService;
 import com.company.module.purchase.service.PurchaseVendorEvaluatorRegistryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -56,6 +59,7 @@ public class PurchaseController {
     private final PurchaseUploadHistoryService uploadHistoryService;
     private final PurchaseVendorEvaluationService vendorEvaluationService;
     private final PurchaseVendorEvaluationExcelService vendorEvaluationExcelService;
+    private final PurchaseVendorEvaluationFormTypeRegistryService vendorEvaluationFormTypeRegistryService;
     private final PurchaseVendorEvaluatorRegistryService vendorEvaluatorRegistryService;
 
     @PostMapping("/uploads")
@@ -106,6 +110,20 @@ public class PurchaseController {
             .body(file.bytes());
     }
 
+    @GetMapping("/vendor-evaluation-form-types")
+    @PreAuthorize("hasAuthority('PURCHASE_READ')")
+    public ResponseEntity<ApiResponse<List<PurchaseVendorEvaluationFormTypeOption>>> vendorEvaluationFormTypes() {
+        return ResponseEntity.ok(ApiResponse.success(vendorEvaluationFormTypeRegistryService.getFormTypes()));
+    }
+
+    @PostMapping("/vendor-evaluation-form-types")
+    @PreAuthorize("hasAuthority('PURCHASE_WRITE')")
+    public ResponseEntity<ApiResponse<PurchaseVendorEvaluationFormTypeOption>> registerVendorEvaluationFormType(
+            @Valid @RequestBody PurchaseVendorEvaluationFormTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(ApiResponse.success(vendorEvaluationFormTypeRegistryService.register(request)));
+    }
+
     @GetMapping("/vendor-evaluators")
     @PreAuthorize("hasAuthority('PURCHASE_READ')")
     public ResponseEntity<ApiResponse<List<PurchaseVendorEvaluatorOption>>> vendorEvaluators() {
@@ -145,7 +163,7 @@ public class PurchaseController {
     public ResponseEntity<byte[]> exportVendorEvaluations(@Valid @RequestBody PurchaseVendorEvaluationExportRequest request) {
         byte[] workbook = vendorEvaluationExcelService.export(
             request.evaluationYear(), request.evaluationType(), request.evaluationIds());
-        String typeLabel = "MAINTENANCE".equalsIgnoreCase(request.evaluationType()) ? "유지보수" : "기계설비공사";
+        String typeLabel = request.evaluationType() == null ? "협력업체" : request.evaluationType().trim();
         String filename = request.evaluationYear() + "년_" + typeLabel + "_협력업체_평가표.xlsx";
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType(

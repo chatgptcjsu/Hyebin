@@ -18,7 +18,11 @@
 .evaluation-list-panel { margin-top: 14px; }
 .evaluation-panel-heading { margin-bottom: 17px; }
 .edit-state, .count-badge { padding: 6px 10px; border-radius: 12px; background: #eff4fa; color: #62768d; font-size: 11px; font-weight: 600; }
-.evaluation-meta-grid { display: grid; grid-template-columns: 150px 150px minmax(200px, 1.6fr) minmax(160px, 1fr) 170px; gap: 12px; padding: 15px; border: 1px solid #edf0f4; border-radius: 8px; background: #fafbfd; }
+.form-type-picker { display: flex; min-width: 210px; flex-direction: column; gap: 5px; color: #718198; font-size: 10px; font-weight: 600; }
+.form-type-picker select { width: 100%; height: 34px; padding: 0 10px; border: 1px solid #dce4ed; border-radius: 7px; background: #fff; color: #40536a; font-size: 12px; }
+.form-type-picker select:focus { border-color: #76a9eb; outline: none; box-shadow: 0 0 0 3px rgb(50 115 217 / 10%); }
+.form-type-picker select:disabled { background: #f4f6f8; color: #8995a3; }
+.evaluation-meta-grid { display: grid; grid-template-columns: 130px minmax(200px, 1.6fr) minmax(160px, 1fr) 170px; gap: 12px; padding: 15px; border: 1px solid #edf0f4; border-radius: 8px; background: #fafbfd; }
 .form-field { display: flex; min-width: 0; flex-direction: column; gap: 7px; color: #6f7e91; font-size: 12px; font-weight: 600; }
 .form-field input, .form-field select { width: 100%; height: 40px; padding: 0 11px; border: 1px solid #dfe5ed; border-radius: 6px; outline: none; background: #fff; color: #34445a; font-size: 13px; }
 .form-field input:focus, .form-field select:focus { border-color: #76a9eb; box-shadow: 0 0 0 3px rgb(50 115 217 / 10%); }
@@ -83,6 +87,7 @@
 
 @media (max-width: 1000px) {
   .evaluation-meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .form-type-picker { min-width: 190px; }
   .criterion-card { grid-template-columns: minmax(190px, 0.8fr) minmax(0, 2fr); }
 }
 @media (max-width: 720px) {
@@ -103,6 +108,8 @@
   .evaluation-list-controls { align-items: stretch; flex-direction: column; }
   .selection-tools { flex-wrap: wrap; }
   .evaluator-registry-panel { padding: 14px 11px; }
+  .evaluation-panel-heading { align-items: flex-start; gap: 12px; }
+  .form-type-picker { min-width: 150px; }
   .registry-form { max-width: none; flex-direction: column; align-items: stretch; }
   .registry-form .form-field { flex-basis: auto; }
   .registry-form .primary-button { align-self: flex-end; }

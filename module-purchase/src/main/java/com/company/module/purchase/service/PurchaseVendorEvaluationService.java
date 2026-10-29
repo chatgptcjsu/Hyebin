@@ -8,6 +8,7 @@ import com.company.module.purchase.dto.PurchaseVendorEvaluationResponse;
 import com.company.module.purchase.entity.PurchaseVendorEvaluation;
 import com.company.module.purchase.entity.PurchaseVendorEvaluatorMaster;
 import com.company.module.purchase.repository.PurchaseVendorEvaluationRepository;
+import com.company.module.purchase.repository.PurchaseVendorEvaluationFormTypeRepository;
 import com.company.module.purchase.repository.PurchaseVendorEvaluatorMasterRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -18,9 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -28,9 +27,9 @@ import java.util.Set;
 public class PurchaseVendorEvaluationService {
 
     private static final String ACTIVE = "N";
-    private static final Set<String> SUPPORTED_EVALUATION_TYPES = Set.of("MECHANICAL", "MAINTENANCE");
 
     private final PurchaseVendorEvaluationRepository evaluationRepository;
+    private final PurchaseVendorEvaluationFormTypeRepository formTypeRepository;
     private final PurchaseVendorEvaluatorMasterRepository evaluatorMasterRepository;
     private final ObjectMapper objectMapper;
     private final CurrentUserProvider currentUserProvider;
@@ -128,11 +127,10 @@ public class PurchaseVendorEvaluationService {
     }
 
     private String validateEvaluationType(String evaluationType) {
-        String type = evaluationType == null ? "" : evaluationType.trim().toUpperCase(Locale.ROOT);
-        if (!SUPPORTED_EVALUATION_TYPES.contains(type)) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
-        }
-        return type;
+        String type = evaluationType == null ? "" : evaluationType.trim();
+        return formTypeRepository.findByFormTypeNameAndDeletedYn(type, ACTIVE)
+            .map(formType -> formType.getFormTypeName())
+            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
     }
 
     private PurchaseVendorEvaluationResponse toResponse(PurchaseVendorEvaluation evaluation) {

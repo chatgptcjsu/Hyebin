@@ -4,6 +4,7 @@ import com.company.core.common.exception.BusinessException;
 import com.company.core.common.exception.ErrorCode;
 import com.company.module.purchase.entity.PurchaseVendorEvaluation;
 import com.company.module.purchase.repository.PurchaseVendorEvaluationRepository;
+import com.company.module.purchase.repository.PurchaseVendorEvaluationFormTypeRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -37,12 +38,13 @@ public class PurchaseVendorEvaluationExcelService {
     private static final String ACTIVE = "N";
 
     private final PurchaseVendorEvaluationRepository evaluationRepository;
+    private final PurchaseVendorEvaluationFormTypeRepository formTypeRepository;
     private final ObjectMapper objectMapper;
 
     public byte[] export(Integer year, String evaluationType, List<Long> requestedIds) {
-        String type = evaluationType == null ? "" : evaluationType.trim().toUpperCase(java.util.Locale.ROOT);
+        String type = evaluationType == null ? "" : evaluationType.trim();
         if (year == null || year < 2000 || year > 2200
-                || !List.of("MECHANICAL", "MAINTENANCE").contains(type)
+                || !formTypeRepository.existsByFormTypeNameAndDeletedYn(type, ACTIVE)
                 || requestedIds == null || requestedIds.isEmpty() || requestedIds.size() > MAX_EXPORT_COUNT) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
@@ -157,7 +159,7 @@ public class PurchaseVendorEvaluationExcelService {
     }
 
     private String typeLabel(String type) {
-        return "MAINTENANCE".equals(type) ? "유지보수" : "기계설비공사";
+        return type == null ? "" : type;
     }
 
     private void setText(Row row, int column, String value, CellStyle style) {

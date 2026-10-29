@@ -11,6 +11,6 @@ import java.util.List;
 
 public record PurchaseVendorEvaluationExportRequest(
     @NotNull @Min(2000) @Max(2200) Integer evaluationYear,
-    @NotBlank @Size(max = 40) String evaluationType,
+    @NotBlank @Size(max = 100) String evaluationType,
     @NotEmpty @Size(max = 100) List<@NotNull @Min(1) Long> evaluationIds
 ) { }

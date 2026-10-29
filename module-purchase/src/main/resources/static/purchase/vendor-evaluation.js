@@ -13,6 +13,7 @@ const dateInput = document.getElementById('evaluation-date');
 const gradeNames = { A: '우수', B: '양호', C: '보통', D: '미흡' };
 let criteria = [];
 let evaluators = [];
+let formTypes = [];
 let selectedEvaluationIds = new Set();
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -39,8 +40,6 @@ function setupYears() {
   formYear.innerHTML = options;
   yearSelect.value = String(yearNow);
   formYear.value = String(yearNow);
-  typeSelect.value = 'MECHANICAL';
-  formType.value = typeSelect.value;
   dateInput.value = today.toISOString().slice(0, 10);
 }
 
@@ -114,6 +113,61 @@ async function loadEvaluators() {
   renderEvaluators();
 }
 
+function renderFormTypes(preferredName = '') {
+  const options = '<option value="">평가서 양식을 선택하세요</option>' + formTypes
+    .map((formTypeOption) => `<option value="${escapeHtml(formTypeOption.formTypeName)}">${escapeHtml(formTypeOption.formTypeName)}</option>`)
+    .join('');
+  typeSelect.innerHTML = options;
+  formType.innerHTML = options;
+  const selectedName = formTypes.some((item) => item.formTypeName === preferredName)
+    ? preferredName : (formTypes[0]?.formTypeName || '');
+  typeSelect.value = selectedName;
+  formType.value = selectedName;
+  typeSelect.disabled = formTypes.length === 0;
+  formType.disabled = formTypes.length === 0;
+  document.getElementById('registered-form-type-count').textContent = `${formTypes.length}개 등록`;
+  document.getElementById('registered-form-type-list').innerHTML = formTypes.length
+    ? formTypes.map((item) => `<span class="evaluator-chip">${escapeHtml(item.formTypeName)}</span>`).join('')
+    : '<span class="registry-empty">등록된 평가서 양식이 없습니다.</span>';
+}
+
+async function loadFormTypes(preferredName = '') {
+  formTypes = await requestJson(`${apiRoot}/vendor-evaluation-form-types`, { cache: 'no-store' });
+  renderFormTypes(preferredName || typeSelect.value);
+}
+
+async function registerFormType(event) {
+  event.preventDefault();
+  const input = document.getElementById('new-form-type-name');
+  const formTypeName = input.value.trim();
+  if (!formTypeName) return;
+  if (formTypes.some((item) => item.formTypeName.toLocaleLowerCase() === formTypeName.toLocaleLowerCase())) {
+    showNotice('이미 등록된 평가서 양식명입니다.', 'error');
+    return;
+  }
+  const button = document.getElementById('register-form-type-button');
+  button.disabled = true;
+  try {
+    const registered = await requestJson(`${apiRoot}/vendor-evaluation-form-types`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ formTypeName })
+    });
+    formTypes = [...formTypes, registered].sort((left, right) => left.formTypeName.localeCompare(right.formTypeName, 'ko'));
+    renderFormTypes(registered.formTypeName);
+    typeSelect.value = registered.formTypeName;
+    formType.value = registered.formTypeName;
+    input.value = '';
+    resetForm();
+    await loadEvaluations();
+    showNotice(`${registered.formTypeName} 평가서 양식을 등록했습니다.`, 'success');
+  } catch (error) {
+    showNotice(error.message, 'error');
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function registerEvaluator(event) {
   event.preventDefault();
   const input = document.getElementById('new-evaluator-name');
@@ -149,8 +203,7 @@ function resetForm() {
   formYear.value = yearSelect.value;
   formType.value = typeSelect.value;
   dateInput.value = today.toISOString().slice(0, 10);
-  document.getElementById('form-title').textContent = '새 협력업체 평가';
-  document.getElementById('edit-state').textContent = '신규 입력';
+  document.getElementById('form-title').textContent = '협력업체 평가';
   document.getElementById('save-evaluation').textContent = '평가 저장';
   updateScorePreview();
 }
@@ -176,7 +229,7 @@ function renderEvaluations(entries) {
   listRoot.innerHTML = entries.map((entry) => `<tr>
     <td><input class="evaluation-row-checkbox" type="checkbox" data-select-id="${Number(entry.purchaseVendorEvaluationId)}" aria-label="${escapeHtml(entry.supplierName)} 평가 선택"></td>
     <td>${escapeHtml(entry.evaluationDate || '—')}</td>
-    <td>${entry.evaluationType === 'MAINTENANCE' ? '유지보수' : '기계설비공사'}</td>
+    <td>${escapeHtml(entry.evaluationType)}</td>
     <td class="supplier-cell">${escapeHtml(entry.supplierName)}</td>
     <td>${escapeHtml(entry.evaluatorName)}</td>
     <td class="number-cell">${Number(entry.totalScore).toFixed(1)}점</td>
@@ -197,6 +250,12 @@ async function loadEvaluations() {
   document.getElementById('select-all-evaluations').checked = false;
   listRoot.innerHTML = '<tr><td colspan="8" class="empty-state">평가 자료를 불러오는 중입니다.</td></tr>';
   updateSelectionUi();
+  if (!typeSelect.value) {
+    listRoot.innerHTML = '<tr><td colspan="8" class="empty-state">평가서 양식을 먼저 등록해 주세요.</td></tr>';
+    document.getElementById('evaluation-count').textContent = '0개 업체';
+    updateSelectionUi();
+    return;
+  }
   const query = new URLSearchParams({ year: yearSelect.value, evaluationType: typeSelect.value });
   try {
     const entries = await requestJson(`${apiRoot}/vendor-evaluations?${query.toString()}`, { cache: 'no-store' });
@@ -232,7 +291,7 @@ async function downloadSelectedEvaluations() {
     }
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
-    const typeLabel = typeSelect.value === 'MAINTENANCE' ? '유지보수' : '기계설비공사';
+    const typeLabel = typeSelect.value;
     const link = document.createElement('a');
     link.href = url;
     link.download = `${yearSelect.value}년_${typeLabel}_협력업체_평가표.xlsx`;
@@ -266,7 +325,6 @@ async function loadForEdit(id) {
       if (input) input.checked = true;
     });
     document.getElementById('form-title').textContent = '협력업체 평가 수정';
-    document.getElementById('edit-state').textContent = '수정 중';
     document.getElementById('save-evaluation').textContent = '변경사항 저장';
     updateScorePreview();
     document.getElementById('form-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -277,6 +335,11 @@ async function loadForEdit(id) {
 
 async function submitEvaluation(event) {
   event.preventDefault();
+  if (!formType.value) {
+    showNotice('평가서 양식을 선택해 주세요.', 'error');
+    formType.focus();
+    return;
+  }
   if (!form.reportValidity()) return;
   const answers = {};
   criteria.forEach((item) => {
@@ -321,6 +384,11 @@ async function initialize() {
   formYear.addEventListener('change', () => { yearSelect.value = formYear.value; loadEvaluations(); });
   yearSelect.addEventListener('change', () => { formYear.value = yearSelect.value; resetForm(); loadEvaluations(); });
   typeSelect.addEventListener('change', () => { formType.value = typeSelect.value; resetForm(); loadEvaluations(); });
+  formType.addEventListener('change', () => {
+    typeSelect.value = formType.value;
+    resetForm();
+    loadEvaluations();
+  });
   document.getElementById('new-evaluation').addEventListener('click', () => {
     resetForm();
     document.getElementById('form-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -343,7 +411,13 @@ async function initialize() {
   });
   document.getElementById('download-selected-evaluations').addEventListener('click', downloadSelectedEvaluations);
   document.getElementById('register-evaluator-form').addEventListener('submit', registerEvaluator);
+  document.getElementById('register-form-type-form').addEventListener('submit', registerFormType);
   form.addEventListener('submit', submitEvaluation);
+  try {
+    await loadFormTypes();
+  } catch (error) {
+    showNotice(`등록된 평가서 양식을 불러오지 못했습니다: ${error.message}`, 'error');
+  }
   try {
     await loadEvaluators();
   } catch (error) {

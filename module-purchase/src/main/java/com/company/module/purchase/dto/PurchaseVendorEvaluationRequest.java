@@ -12,7 +12,7 @@ import java.util.Map;
 
 public record PurchaseVendorEvaluationRequest(
     @NotNull @Min(2000) @Max(2200) Integer evaluationYear,
-    @NotBlank @Size(max = 40) String evaluationType,
+    @NotBlank @Size(max = 100) String evaluationType,
     @NotBlank @Size(max = 200) String supplierName,
     @NotBlank @Size(max = 100) String evaluatorName,
     @NotNull LocalDate evaluationDate,
