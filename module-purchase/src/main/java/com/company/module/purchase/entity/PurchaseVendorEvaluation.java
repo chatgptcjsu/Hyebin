@@ -48,6 +48,9 @@ public class PurchaseVendorEvaluation {
     @Column(name = "EVALUATION_DATE", nullable = false)
     private LocalDate evaluationDate;
 
+    @Column(name = "EVALUATION_OPINION", columnDefinition = "TEXT")
+    private String evaluationOpinion;
+
     @Column(name = "ANSWERS_JSON", nullable = false, columnDefinition = "LONGTEXT")
     private String answersJson;
 
@@ -83,13 +86,15 @@ public class PurchaseVendorEvaluation {
 
     @Builder
     private PurchaseVendorEvaluation(Integer evaluationYear, String evaluationType, String supplierName,
-                                     String evaluatorName, LocalDate evaluationDate, String answersJson, String scoresJson,
-                                     BigDecimal totalScore, String finalGrade, Long createdBy) {
+                                     String evaluatorName, LocalDate evaluationDate, String evaluationOpinion,
+                                     String answersJson, String scoresJson, BigDecimal totalScore, String finalGrade,
+                                     Long createdBy) {
         this.evaluationYear = evaluationYear;
         this.evaluationType = evaluationType;
         this.supplierName = supplierName;
         this.evaluatorName = evaluatorName;
         this.evaluationDate = evaluationDate;
+        this.evaluationOpinion = evaluationOpinion;
         this.answersJson = answersJson;
         this.scoresJson = scoresJson;
         this.totalScore = totalScore;
@@ -110,12 +115,13 @@ public class PurchaseVendorEvaluation {
     }
 
     public void updateEvaluation(String evaluationType, String supplierName, String evaluatorName,
-                                 LocalDate evaluationDate, String answersJson, String scoresJson,
-                                 BigDecimal totalScore, String finalGrade, Long updatedBy) {
+                                 LocalDate evaluationDate, String evaluationOpinion, String answersJson,
+                                 String scoresJson, BigDecimal totalScore, String finalGrade, Long updatedBy) {
         this.evaluationType = evaluationType;
         this.supplierName = supplierName;
         this.evaluatorName = evaluatorName;
         this.evaluationDate = evaluationDate;
+        this.evaluationOpinion = evaluationOpinion;
         this.answersJson = answersJson;
         this.scoresJson = scoresJson;
         this.totalScore = totalScore;

@@ -61,6 +61,11 @@
 #total-score small { color: #8797aa; font-size: 12px; font-weight: 500; }
 .final-grade-wrap { min-width: 90px; padding-left: 18px; border-left: 1px solid #dce6f1; }
 .score-hint { margin-left: auto; color: #8493a4; font-size: 11px; }
+.evaluation-opinion-field { margin-top: 16px; }
+.evaluation-opinion-field > span small { margin-left: 6px; color: #9aa5b2; font-size: 11px; font-weight: 500; }
+.evaluation-opinion-field textarea { width: 100%; min-height: 100px; padding: 11px 12px; border: 1px solid #dfe5ed; border-radius: 6px; outline: none; background: #fff; color: #34445a; font: inherit; font-size: 13px; line-height: 1.6; resize: vertical; }
+.evaluation-opinion-field textarea:focus { border-color: #76a9eb; box-shadow: 0 0 0 3px rgb(50 115 217 / 10%); }
+.evaluation-opinion-field textarea::placeholder { color: #a1adba; }
 .form-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 13px; }
 .form-actions .secondary-button, .form-actions .primary-button { min-width: 92px; }
 .evaluation-list-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 15px; }

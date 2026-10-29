@@ -16,5 +16,6 @@ public record PurchaseVendorEvaluationRequest(
     @NotBlank @Size(max = 200) String supplierName,
     @NotBlank @Size(max = 100) String evaluatorName,
     @NotNull LocalDate evaluationDate,
+    @Size(max = 2000) String evaluationOpinion,
     @NotEmpty @Size(min = 12, max = 12) Map<String, String> answers
 ) { }

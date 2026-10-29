@@ -314,6 +314,7 @@ async function loadForEdit(id) {
     formYear.value = String(entry.evaluationYear);
     formType.value = entry.evaluationType;
     document.getElementById('supplier-name').value = entry.supplierName;
+    document.getElementById('evaluation-opinion').value = entry.evaluationOpinion || '';
     document.getElementById('evaluator-name').value = evaluators.some((evaluator) => evaluator.evaluatorName === entry.evaluatorName)
       ? entry.evaluatorName : '';
     if (!document.getElementById('evaluator-name').value) {
@@ -357,6 +358,7 @@ async function submitEvaluation(event) {
     supplierName: document.getElementById('supplier-name').value.trim(),
     evaluatorName: document.getElementById('evaluator-name').value.trim(),
     evaluationDate: dateInput.value,
+    evaluationOpinion: document.getElementById('evaluation-opinion').value.trim(),
     answers
   };
   const button = document.getElementById('save-evaluation');

@@ -67,6 +67,7 @@ public class PurchaseVendorEvaluationService {
                 .supplierName(validated.supplierName())
                 .evaluatorName(validated.evaluatorName())
                 .evaluationDate(request.evaluationDate())
+                .evaluationOpinion(validated.evaluationOpinion())
                 .answersJson(writeJson(request.answers()))
                 .scoresJson(writeJson(validated.calculation().criteria()))
                 .totalScore(validated.calculation().totalScore())
@@ -93,7 +94,7 @@ public class PurchaseVendorEvaluationService {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
         evaluation.updateEvaluation(validated.evaluationType(), validated.supplierName(), validated.evaluatorName(),
-            request.evaluationDate(),
+            request.evaluationDate(), validated.evaluationOpinion(),
             writeJson(request.answers()), writeJson(validated.calculation().criteria()),
             validated.calculation().totalScore(), validated.calculation().grade(), currentUserProvider.getCurrentUserId());
         return toResponse(evaluation);
@@ -105,8 +106,9 @@ public class PurchaseVendorEvaluationService {
         String evaluationType = validateEvaluationType(request.evaluationType());
         String supplierName = request.supplierName() == null ? "" : request.supplierName().trim();
         String evaluatorName = request.evaluatorName() == null ? "" : request.evaluatorName().trim();
+        String evaluationOpinion = request.evaluationOpinion() == null ? "" : request.evaluationOpinion().trim();
         if (supplierName.isEmpty() || supplierName.length() > 200 || evaluatorName.isEmpty() || evaluatorName.length() > 100
-                || request.evaluationDate() == null) {
+                || evaluationOpinion.length() > 2000 || request.evaluationDate() == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
         PurchaseVendorEvaluatorMaster registeredEvaluator = evaluatorMasterRepository
@@ -114,7 +116,8 @@ public class PurchaseVendorEvaluationService {
             .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
         try {
             return new ValidatedEvaluation(request.evaluationYear(), evaluationType, supplierName,
-                registeredEvaluator.getEvaluatorName(), PurchaseVendorEvaluationScoring.calculate(request.answers()));
+                registeredEvaluator.getEvaluatorName(), evaluationOpinion,
+                PurchaseVendorEvaluationScoring.calculate(request.answers()));
         } catch (IllegalArgumentException exception) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
@@ -146,6 +149,7 @@ public class PurchaseVendorEvaluationService {
                 .supplierName(evaluation.getSupplierName())
                 .evaluatorName(evaluation.getEvaluatorName())
                 .evaluationDate(evaluation.getEvaluationDate())
+                .evaluationOpinion(evaluation.getEvaluationOpinion())
                 .answers(answers)
                 .criteriaScores(scores)
                 .totalScore(evaluation.getTotalScore())
@@ -165,5 +169,6 @@ public class PurchaseVendorEvaluationService {
     }
 
     private record ValidatedEvaluation(Integer year, String evaluationType, String supplierName, String evaluatorName,
+                                       String evaluationOpinion,
                                        PurchaseVendorEvaluationScoring.Calculation calculation) { }
 }

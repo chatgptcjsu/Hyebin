@@ -142,6 +142,12 @@ public class PurchaseVendorEvaluationExcelService {
         setText(grade, 2, "최종 등급", totalStyle);
         setText(grade, 5, evaluation.getFinalGrade(), totalStyle);
 
+        Row opinion = sheet.createRow(rowIndex + 3);
+        setText(opinion, 0, "평가 의견", totalStyle);
+        setText(opinion, 1, evaluation.getEvaluationOpinion(), valueStyle);
+        opinion.setHeightInPoints(54);
+        sheet.addMergedRegion(new CellRangeAddress(rowIndex + 3, rowIndex + 3, 1, 5));
+
         int[] widths = {8, 20, 36, 12, 34, 14};
         for (int index = 0; index < widths.length; index++) sheet.setColumnWidth(index, widths[index] * 256);
         sheet.createFreezePane(0, 5);

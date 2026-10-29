@@ -18,6 +18,7 @@ public class PurchaseVendorEvaluationResponse {
     private String supplierName;
     private String evaluatorName;
     private LocalDate evaluationDate;
+    private String evaluationOpinion;
     private Map<String, String> answers;
     private List<PurchaseVendorEvaluationScoring.ScoredCriterion> criteriaScores;
     private BigDecimal totalScore;
