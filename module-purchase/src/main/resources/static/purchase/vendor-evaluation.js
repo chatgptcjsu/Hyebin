@@ -44,21 +44,28 @@ function renderCriteria() {
     if (!sections.has(item.section)) sections.set(item.section, []);
     sections.get(item.section).push(item);
   });
-  let index = 0;
-  criteriaRoot.innerHTML = Array.from(sections.entries()).map(([section, items]) => `
-    <section class="criteria-section" aria-label="${escapeHtml(section)}">
-      <div class="criteria-section-heading"><span>${String(index + 1).padStart(2, '0')}</span><h3>${escapeHtml(section)}</h3></div>
+  let criterionIndex = 0;
+  let sectionIndex = 0;
+  criteriaRoot.innerHTML = Array.from(sections.entries()).map(([section, items]) => {
+    sectionIndex += 1;
+    const sectionMaximum = items.reduce((sum, item) => sum + Number(item.maximumScore), 0);
+    return `
+    <section class="criteria-section" aria-label="${escapeHtml(section)} ${sectionMaximum}점">
+      <div class="criteria-section-heading"><span>${String(sectionIndex).padStart(2, '0')}</span><h3>${escapeHtml(section)} <small>합계 ${sectionMaximum}점</small></h3></div>
       <div class="criteria-grid">${items.map((item) => {
-        index += 1;
-        return `<fieldset class="criterion-card" data-criterion="${escapeHtml(item.code)}">
-          <legend><span class="criterion-number">${String(index).padStart(2, '0')}</span><span>${escapeHtml(item.name)}</span><small>배점 ${Number(item.maximumScore)}점</small></legend>
-          <div class="criterion-options">${item.options.map((option) => `<label class="criterion-option">
-            <input type="radio" name="answer-${escapeHtml(item.code)}" value="${escapeHtml(option.code)}" data-score="${Number(option.score)}">
-            <span class="option-copy"><span>${escapeHtml(option.label)}</span><strong>${Number(option.score)}점</strong></span>
-          </label>`).join('')}</div>
-        </fieldset>`;
+        criterionIndex += 1;
+        return `<div class="criterion-card" data-criterion="${escapeHtml(item.code)}" role="group" aria-labelledby="criterion-${escapeHtml(item.code)}-label">
+          <div class="criterion-title" id="criterion-${escapeHtml(item.code)}-label"><span class="criterion-number">${String(criterionIndex).padStart(2, '0')}</span><span class="criterion-name">${escapeHtml(item.name)}</span><small>배점 ${Number(item.maximumScore)}점</small></div>
+          <div class="criterion-options" role="radiogroup" aria-label="${escapeHtml(item.name)} 선택">
+            ${item.options.map((option) => `<label class="criterion-option">
+              <input type="radio" name="answer-${escapeHtml(item.code)}" value="${escapeHtml(option.code)}" data-score="${Number(option.score)}">
+              <span class="option-copy"><span>${escapeHtml(option.label)}</span><strong>${Number(option.score)}점</strong></span>
+            </label>`).join('')}
+          </div>
+        </div>`;
       }).join('')}</div>
-    </section>`).join('');
+    </section>`;
+  }).join('');
   criteriaRoot.querySelectorAll('input[type="radio"]').forEach((input) => input.addEventListener('change', updateScorePreview));
   updateScorePreview();
 }
