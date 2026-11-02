@@ -52,7 +52,10 @@
       <section class="panel evaluation-form-panel" aria-labelledby="form-title">
         <div class="panel-heading evaluation-panel-heading">
           <div><p class="panel-kicker">EVALUATION FORM</p><h2 id="form-title">협력업체 평가</h2></div>
-          <label class="form-type-picker" for="form-type"><span>평가서 양식</span><select id="form-type" required aria-label="평가서 양식 선택"></select></label>
+          <div class="form-type-picker-wrap">
+            <label class="form-type-picker" for="form-type"><span>평가서 양식</span><select id="form-type" required aria-label="평가서 양식 선택"></select></label>
+            <a id="selected-form-type-file" class="selected-form-type-file" href="#" hidden>첨부 양식 파일 보기</a>
+          </div>
         </div>
         <form id="evaluation-form">
           <input id="evaluation-id" type="hidden">
@@ -118,9 +121,10 @@
           <div><p class="panel-kicker">EVALUATION FORM DIRECTORY</p><h2 id="form-type-registry-title">평가서 양식 등록</h2></div>
           <span id="registered-form-type-count" class="count-badge">0개 등록</span>
         </div>
-        <p class="registry-description">양식명을 등록하면 평가 입력과 목록 필터에서 선택할 수 있습니다.</p>
-        <form id="register-form-type-form" class="registry-form">
-          <label class="form-field" for="new-form-type-name"><span>새 평가서 양식명</span><input id="new-form-type-name" type="text" maxlength="100" required placeholder="예: 기계설비공사, 유지보수, 저장/소모"></label>
+        <p class="registry-description">평가서 이름과 원본 PDF 또는 Excel 파일을 함께 등록하세요. 등록한 양식은 평가 입력에서 선택할 수 있습니다. 파일은 10MB 이하만 첨부할 수 있습니다.</p>
+        <form id="register-form-type-form" class="registry-form form-type-registry-form" enctype="multipart/form-data">
+          <label class="form-field" for="new-form-type-name"><span>평가서 양식명</span><input id="new-form-type-name" name="formTypeName" type="text" maxlength="100" required placeholder="예: 기계설비공사"></label>
+          <label class="form-field" for="new-form-type-file"><span>평가서 파일 (PDF / XLS / XLSX)</span><input id="new-form-type-file" name="file" type="file" accept=".pdf,.xls,.xlsx,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required></label>
           <button id="register-form-type-button" class="primary-button" type="submit">양식 등록</button>
         </form>
         <div id="registered-form-type-list" class="registry-list" aria-live="polite"><span class="registry-empty">등록된 평가서 양식이 없습니다.</span></div>

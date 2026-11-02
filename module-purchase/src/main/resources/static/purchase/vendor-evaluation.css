@@ -18,10 +18,13 @@
 .evaluation-list-panel { margin-top: 14px; }
 .evaluation-panel-heading { margin-bottom: 17px; }
 .edit-state, .count-badge { padding: 6px 10px; border-radius: 12px; background: #eff4fa; color: #62768d; font-size: 11px; font-weight: 600; }
-.form-type-picker { display: flex; min-width: 210px; flex-direction: column; gap: 5px; color: #718198; font-size: 10px; font-weight: 600; }
+.form-type-picker-wrap { display: flex; min-width: 210px; flex-direction: column; align-items: flex-start; gap: 5px; }
+.form-type-picker { display: flex; width: 100%; flex-direction: column; gap: 5px; color: #718198; font-size: 10px; font-weight: 600; }
 .form-type-picker select { width: 100%; height: 34px; padding: 0 10px; border: 1px solid #dce4ed; border-radius: 7px; background: #fff; color: #40536a; font-size: 12px; }
 .form-type-picker select:focus { border-color: #76a9eb; outline: none; box-shadow: 0 0 0 3px rgb(50 115 217 / 10%); }
 .form-type-picker select:disabled { background: #f4f6f8; color: #8995a3; }
+.selected-form-type-file { color: #2466c7; font-size: 11px; text-decoration: none; }
+.selected-form-type-file:hover { text-decoration: underline; }
 .evaluation-meta-grid { display: grid; grid-template-columns: 130px minmax(200px, 1.6fr) minmax(160px, 1fr) 170px; gap: 12px; padding: 15px; border: 1px solid #edf0f4; border-radius: 8px; background: #fafbfd; }
 .form-field { display: flex; min-width: 0; flex-direction: column; gap: 7px; color: #6f7e91; font-size: 12px; font-weight: 600; }
 .form-field input, .form-field select { width: 100%; height: 40px; padding: 0 11px; border: 1px solid #dfe5ed; border-radius: 6px; outline: none; background: #fff; color: #34445a; font-size: 13px; }
@@ -86,13 +89,20 @@
 .registry-form { display: flex; max-width: 620px; align-items: end; gap: 10px; }
 .registry-form .form-field { flex: 1 1 360px; }
 .registry-form .primary-button { flex: 0 0 auto; }
+.form-type-registry-form { max-width: 980px; }
+.form-type-registry-form .form-field { flex: 1 1 300px; }
+.form-type-registry-form input[type="file"] { height: auto; min-height: 40px; padding: 8px; font-size: 12px; }
 .registry-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .evaluator-chip { padding: 7px 12px; border: 1px solid #dce7f2; border-radius: 18px; background: #f5f9ff; color: #395773; font-size: 12px; font-weight: 600; }
+.form-type-chip { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 9px; padding: 8px 12px; border: 1px solid #dce7f2; border-radius: 9px; background: #f5f9ff; color: #395773; font-size: 12px; }
+.form-type-file-link { color: #2466c7; font-weight: 600; text-decoration: none; }
+.form-type-file-link:hover { text-decoration: underline; }
+.form-type-file-missing { color: #929eaa; font-size: 11px; }
 .registry-empty { color: #8795a5; font-size: 12px; }
 
 @media (max-width: 1000px) {
   .evaluation-meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .form-type-picker { min-width: 190px; }
+  .form-type-picker-wrap { min-width: 190px; }
   .criterion-card { grid-template-columns: minmax(190px, 0.8fr) minmax(0, 2fr); }
 }
 @media (max-width: 720px) {
@@ -114,8 +124,9 @@
   .selection-tools { flex-wrap: wrap; }
   .evaluator-registry-panel { padding: 14px 11px; }
   .evaluation-panel-heading { align-items: flex-start; gap: 12px; }
-  .form-type-picker { min-width: 150px; }
+  .form-type-picker-wrap { min-width: 150px; }
   .registry-form { max-width: none; flex-direction: column; align-items: stretch; }
   .registry-form .form-field { flex-basis: auto; }
   .registry-form .primary-button { align-self: flex-end; }
+  .form-type-registry-form .primary-button { align-self: stretch; }
 }

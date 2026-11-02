@@ -30,6 +30,7 @@ public class PurchaseVendorEvaluationService {
 
     private final PurchaseVendorEvaluationRepository evaluationRepository;
     private final PurchaseVendorEvaluationFormTypeRepository formTypeRepository;
+    private final PurchaseVendorEvaluationFormTypeRegistryService formTypeRegistryService;
     private final PurchaseVendorEvaluatorMasterRepository evaluatorMasterRepository;
     private final ObjectMapper objectMapper;
     private final CurrentUserProvider currentUserProvider;
@@ -104,6 +105,9 @@ public class PurchaseVendorEvaluationService {
         if (request == null) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         validateYear(request.evaluationYear());
         String evaluationType = validateEvaluationType(request.evaluationType());
+        if (!formTypeRegistryService.isRegisteredAndAttached(evaluationType)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
         String supplierName = request.supplierName() == null ? "" : request.supplierName().trim();
         String evaluatorName = request.evaluatorName() == null ? "" : request.evaluatorName().trim();
         String evaluationOpinion = request.evaluationOpinion() == null ? "" : request.evaluationOpinion().trim();

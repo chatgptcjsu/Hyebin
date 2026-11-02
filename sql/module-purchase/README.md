@@ -21,7 +21,7 @@
 - 선택한 연도의 1~12월 계획 대비·전월 대비 증감액 및 증감 사유 표
 - 미업로드 월도 연간 표에 표시해 연도별 입력 범위를 한눈에 확인
 - 사업부별 실적 합계는 표시하지 않음 (첫 시트에 사업부별 자료가 없음)
-- 등록된 평가서 양식별 협력업체 평가 입력·수정·목록. 초기 양식은 기계설비공사, 유지보수, 저장/소모, 종이자원, 폐기물이며 화면 하단에서 추가 등록 가능
+- 등록된 평가서 양식별 협력업체 평가 입력·수정·목록. 초기 양식은 기계설비공사, 유지보수, 저장/소모, 종이자원, 폐기물이며 화면 하단에서 PDF/XLS/XLSX 파일과 이름을 함께 등록 가능
 - 12개 항목 선택을 기준표대로 서버에서 합산하고 A/B/C/D 등급 산정
 - 평가 입력 마지막에 선택형 평가 의견을 작성하고 저장·수정할 수 있으며 Excel 평가서에도 포함
 - 평가 목록은 등록 양식과 연도로 필터링하고, 선택한 평가서만 Excel로 다운로드
@@ -42,7 +42,8 @@
 | `purchase_category` | 첫 번째 시트의 구분별 구매실적 요약 행 |
 | `purchase_detail_sheet` | 두 번째 시트의 업체별 표, 합계, 주요 이슈·개선 방향 JSON 데이터 |
 | `purchase_vendor_evaluation` | 연도별 협력업체 평가 답변, 평가 의견, 항목별 점수, 총점 및 등급 |
-| `purchase_vendor_evaluation_form_type` | 평가 입력·조회에 사용할 평가서 양식 등록 목록 |
+| `purchase_vendor_evaluation_form_type` | 평가 입력·조회에 사용할 양식명, 첨부 파일 정보 |
+| `purchase_vendor_evaluation_form_type_file` | 등록한 PDF/XLS/XLSX 평가서 원본 파일 바이너리 |
 | `purchase_vendor_evaluator_master` | 평가 입력에서 선택할 수 있는 공용 평가자 성명 목록 |
 
 업로드 배치와 월별 상세의 기존 이력은 보존합니다. 논리 삭제는 `DELETED_YN` 공통 컬럼 기준이며 물리 삭제는 사용하지 않습니다.
@@ -60,7 +61,8 @@
 | `GET` | `/purchase-api/upload-history/{uploadBatchId}/file` | `PURCHASE_READ` | 업로드된 원본 Excel 다운로드 |
 | `GET` | `/purchase-api/detail-sheet?year=2026&month=9` | `PURCHASE_READ` | 해당 월 현재 업로드 버전의 두 번째 시트 상세 행·합계·이슈 조회 |
 | `GET` | `/purchase-api/vendor-evaluation-form-types` | `PURCHASE_READ` | 등록된 평가서 양식 목록 조회 |
-| `POST` | `/purchase-api/vendor-evaluation-form-types` | `PURCHASE_WRITE` | 평가서 양식명 등록 |
+| `POST` | `/purchase-api/vendor-evaluation-form-types` | `PURCHASE_WRITE` | multipart `formTypeName`과 `file`로 PDF/XLS/XLSX 평가서 양식 등록 (10MB 이하) |
+| `GET` | `/purchase-api/vendor-evaluation-form-types/{id}/file` | `PURCHASE_READ` | 등록된 양식 원본 파일 다운로드 |
 | `GET` | `/purchase-api/vendor-evaluators` | `PURCHASE_READ` | 등록된 평가자 목록 조회 |
 | `POST` | `/purchase-api/vendor-evaluators` | `PURCHASE_WRITE` | 평가자 성명 등록 |
 | `GET` | `/purchase-api/vendor-evaluations/criteria` | `PURCHASE_READ` | 평가 항목, 선택지 및 배점 기준 조회 |

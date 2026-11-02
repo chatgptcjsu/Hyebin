@@ -39,12 +39,14 @@ public class PurchaseVendorEvaluationExcelService {
 
     private final PurchaseVendorEvaluationRepository evaluationRepository;
     private final PurchaseVendorEvaluationFormTypeRepository formTypeRepository;
+    private final PurchaseVendorEvaluationFormTypeRegistryService formTypeRegistryService;
     private final ObjectMapper objectMapper;
 
     public byte[] export(Integer year, String evaluationType, List<Long> requestedIds) {
         String type = evaluationType == null ? "" : evaluationType.trim();
         if (year == null || year < 2000 || year > 2200
                 || !formTypeRepository.existsByFormTypeNameAndDeletedYn(type, ACTIVE)
+                || !formTypeRegistryService.isRegisteredAndAttached(type)
                 || requestedIds == null || requestedIds.isEmpty() || requestedIds.size() > MAX_EXPORT_COUNT) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }

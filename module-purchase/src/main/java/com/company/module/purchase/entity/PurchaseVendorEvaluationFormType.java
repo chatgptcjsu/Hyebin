@@ -32,6 +32,12 @@ public class PurchaseVendorEvaluationFormType {
     @Column(name = "FORM_TYPE_NAME", nullable = false, length = 100)
     private String formTypeName;
 
+    @Column(name = "ORIGINAL_FILENAME", length = 255)
+    private String originalFilename;
+
+    @Column(name = "FILE_CONTENT_TYPE", length = 100)
+    private String fileContentType;
+
     @Column(name = "CREATED_AT", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -53,9 +59,18 @@ public class PurchaseVendorEvaluationFormType {
     @Column(name = "DELETED_BY")
     private Long deletedBy;
 
+    public void attachFile(String originalFilename, String fileContentType, Long updatedBy) {
+        this.originalFilename = originalFilename;
+        this.fileContentType = fileContentType;
+        this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
+    }
+
     @Builder
-    private PurchaseVendorEvaluationFormType(String formTypeName, Long createdBy) {
+    private PurchaseVendorEvaluationFormType(String formTypeName, String originalFilename, String fileContentType, Long createdBy) {
         this.formTypeName = formTypeName;
+        this.originalFilename = originalFilename;
+        this.fileContentType = fileContentType;
         this.createdBy = createdBy;
         this.deletedYn = "N";
     }

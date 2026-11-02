@@ -9,7 +9,6 @@ import com.company.module.purchase.dto.PurchaseVendorEvaluationRequest;
 import com.company.module.purchase.dto.PurchaseVendorEvaluationResponse;
 import com.company.module.purchase.dto.PurchaseVendorEvaluationExportRequest;
 import com.company.module.purchase.dto.PurchaseVendorEvaluationFormTypeOption;
-import com.company.module.purchase.dto.PurchaseVendorEvaluationFormTypeRequest;
 import com.company.module.purchase.dto.PurchaseVendorEvaluatorOption;
 import com.company.module.purchase.dto.PurchaseVendorEvaluatorRegisterRequest;
 import com.company.module.purchase.service.PurchaseDashboardService;
@@ -119,9 +118,23 @@ public class PurchaseController {
     @PostMapping("/vendor-evaluation-form-types")
     @PreAuthorize("hasAuthority('PURCHASE_WRITE')")
     public ResponseEntity<ApiResponse<PurchaseVendorEvaluationFormTypeOption>> registerVendorEvaluationFormType(
-            @Valid @RequestBody PurchaseVendorEvaluationFormTypeRequest request) {
+            @RequestParam("formTypeName") String formTypeName,
+            @RequestParam("file") MultipartFile file) {
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success(vendorEvaluationFormTypeRegistryService.register(request)));
+            .body(ApiResponse.success(vendorEvaluationFormTypeRegistryService.register(formTypeName, file)));
+    }
+
+    @GetMapping("/vendor-evaluation-form-types/{id}/file")
+    @PreAuthorize("hasAuthority('PURCHASE_READ')")
+    public ResponseEntity<byte[]> downloadVendorEvaluationFormTypeFile(@PathVariable("id") @Min(1) Long id) {
+        PurchaseVendorEvaluationFormTypeRegistryService.DownloadedFormFile file =
+            vendorEvaluationFormTypeRegistryService.getFile(id);
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(file.contentType()))
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                ContentDisposition.attachment().filename(file.filename(), StandardCharsets.UTF_8).build().toString())
+            .header(HttpHeaders.CACHE_CONTROL, "no-store")
+            .body(file.bytes());
     }
 
     @GetMapping("/vendor-evaluators")

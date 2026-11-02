@@ -12,4 +12,7 @@ public interface PurchaseVendorEvaluationFormTypeRepository extends JpaRepositor
     boolean existsByFormTypeNameAndDeletedYn(String formTypeName, String deletedYn);
 
     Optional<PurchaseVendorEvaluationFormType> findByFormTypeNameAndDeletedYn(String formTypeName, String deletedYn);
+
+    Optional<PurchaseVendorEvaluationFormType> findByPurchaseVendorEvaluationFormTypeIdAndDeletedYn(
+        Long purchaseVendorEvaluationFormTypeId, String deletedYn);
 }

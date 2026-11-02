@@ -114,21 +114,38 @@ async function loadEvaluators() {
 }
 
 function renderFormTypes(preferredName = '') {
-  const options = '<option value="">평가서 양식을 선택하세요</option>' + formTypes
+  const selectableTypes = formTypes.filter((item) => item.hasFile);
+  const options = '<option value="">첨부된 평가서 양식을 선택하세요</option>' + selectableTypes
     .map((formTypeOption) => `<option value="${escapeHtml(formTypeOption.formTypeName)}">${escapeHtml(formTypeOption.formTypeName)}</option>`)
     .join('');
   typeSelect.innerHTML = options;
   formType.innerHTML = options;
-  const selectedName = formTypes.some((item) => item.formTypeName === preferredName)
-    ? preferredName : (formTypes[0]?.formTypeName || '');
+  const selectedName = selectableTypes.some((item) => item.formTypeName === preferredName)
+    ? preferredName : (selectableTypes[0]?.formTypeName || '');
   typeSelect.value = selectedName;
   formType.value = selectedName;
-  typeSelect.disabled = formTypes.length === 0;
-  formType.disabled = formTypes.length === 0;
+  typeSelect.disabled = selectableTypes.length === 0;
+  formType.disabled = selectableTypes.length === 0;
+  updateSelectedFormTypeFile();
   document.getElementById('registered-form-type-count').textContent = `${formTypes.length}개 등록`;
   document.getElementById('registered-form-type-list').innerHTML = formTypes.length
-    ? formTypes.map((item) => `<span class="evaluator-chip">${escapeHtml(item.formTypeName)}</span>`).join('')
+    ? formTypes.map((item) => `<span class="form-type-chip"><strong>${escapeHtml(item.formTypeName)}</strong>${item.hasFile && item.originalFilename && item.fileDownloadUrl
+      ? `<a href="${escapeHtml(item.fileDownloadUrl)}" class="form-type-file-link">${escapeHtml(item.originalFilename)} 다운로드</a>`
+      : '<span class="form-type-file-missing">파일 첨부 필요</span>'}</span>`).join('')
     : '<span class="registry-empty">등록된 평가서 양식이 없습니다.</span>';
+}
+
+function updateSelectedFormTypeFile() {
+  const selected = formTypes.find((item) => item.formTypeName === formType.value);
+  const link = document.getElementById('selected-form-type-file');
+  if (selected?.hasFile && selected.fileDownloadUrl) {
+    link.href = selected.fileDownloadUrl;
+    link.textContent = selected.originalFilename ? `양식 파일: ${selected.originalFilename}` : '첨부 양식 파일 보기';
+    link.hidden = false;
+  } else {
+    link.removeAttribute('href');
+    link.hidden = true;
+  }
 }
 
 async function loadFormTypes(preferredName = '') {
@@ -139,25 +156,37 @@ async function loadFormTypes(preferredName = '') {
 async function registerFormType(event) {
   event.preventDefault();
   const input = document.getElementById('new-form-type-name');
+  const fileInput = document.getElementById('new-form-type-file');
   const formTypeName = input.value.trim();
-  if (!formTypeName) return;
-  if (formTypes.some((item) => item.formTypeName.toLocaleLowerCase() === formTypeName.toLocaleLowerCase())) {
-    showNotice('이미 등록된 평가서 양식명입니다.', 'error');
+  const file = fileInput.files[0];
+  if (!formTypeName || !file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    showNotice('첨부 파일은 10MB 이하만 등록할 수 있습니다.', 'error');
+    return;
+  }
+  if (formTypes.some((item) => item.formTypeName.toLocaleLowerCase() === formTypeName.toLocaleLowerCase()
+      && item.originalFilename)) {
+    showNotice('이미 첨부 파일이 등록된 평가서 양식명입니다.', 'error');
     return;
   }
   const button = document.getElementById('register-form-type-button');
   button.disabled = true;
   try {
+    const payload = new FormData();
+    payload.append('formTypeName', formTypeName);
+    payload.append('file', file);
     const registered = await requestJson(`${apiRoot}/vendor-evaluation-form-types`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ formTypeName })
+      body: payload
     });
-    formTypes = [...formTypes, registered].sort((left, right) => left.formTypeName.localeCompare(right.formTypeName, 'ko'));
+    formTypes = [...formTypes.filter((item) => item.formTypeName !== registered.formTypeName), registered]
+      .sort((left, right) => left.formTypeName.localeCompare(right.formTypeName, 'ko'));
     renderFormTypes(registered.formTypeName);
     typeSelect.value = registered.formTypeName;
     formType.value = registered.formTypeName;
+    updateSelectedFormTypeFile();
     input.value = '';
+    fileInput.value = '';
     resetForm();
     await loadEvaluations();
     showNotice(`${registered.formTypeName} 평가서 양식을 등록했습니다.`, 'success');
@@ -313,6 +342,8 @@ async function loadForEdit(id) {
     document.getElementById('evaluation-id').value = entry.purchaseVendorEvaluationId;
     formYear.value = String(entry.evaluationYear);
     formType.value = entry.evaluationType;
+    typeSelect.value = entry.evaluationType;
+    updateSelectedFormTypeFile();
     document.getElementById('supplier-name').value = entry.supplierName;
     document.getElementById('evaluation-opinion').value = entry.evaluationOpinion || '';
     document.getElementById('evaluator-name').value = evaluators.some((evaluator) => evaluator.evaluatorName === entry.evaluatorName)
@@ -385,9 +416,15 @@ async function initialize() {
   setupYears();
   formYear.addEventListener('change', () => { yearSelect.value = formYear.value; loadEvaluations(); });
   yearSelect.addEventListener('change', () => { formYear.value = yearSelect.value; resetForm(); loadEvaluations(); });
-  typeSelect.addEventListener('change', () => { formType.value = typeSelect.value; resetForm(); loadEvaluations(); });
+  typeSelect.addEventListener('change', () => {
+    formType.value = typeSelect.value;
+    updateSelectedFormTypeFile();
+    resetForm();
+    loadEvaluations();
+  });
   formType.addEventListener('change', () => {
     typeSelect.value = formType.value;
+    updateSelectedFormTypeFile();
     resetForm();
     loadEvaluations();
   });
