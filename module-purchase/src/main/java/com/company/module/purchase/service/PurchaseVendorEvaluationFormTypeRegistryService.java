@@ -40,6 +40,7 @@ public class PurchaseVendorEvaluationFormTypeRegistryService {
     public List<PurchaseVendorEvaluationFormTypeOption> getFormTypes() {
         return formTypeRepository.findByDeletedYnOrderByFormTypeNameAsc(ACTIVE).stream()
             .map(this::toOption)
+            .filter(PurchaseVendorEvaluationFormTypeOption::hasFile)
             .toList();
     }
 
@@ -52,21 +53,22 @@ public class PurchaseVendorEvaluationFormTypeRegistryService {
         ValidatedFile validatedFile = validateFile(file);
         try {
             Long userId = currentUserProvider.getCurrentUserId();
-            PurchaseVendorEvaluationFormType saved = formTypeRepository
-                .findByFormTypeNameAndDeletedYn(formTypeName, ACTIVE)
-                .map(existing -> {
-                    if (existing.getOriginalFilename() != null) {
-                        throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
-                    }
-                    existing.attachFile(validatedFile.filename(), validatedFile.contentType(), userId);
-                    return formTypeRepository.saveAndFlush(existing);
-                })
-                .orElseGet(() -> formTypeRepository.saveAndFlush(PurchaseVendorEvaluationFormType.builder()
+            PurchaseVendorEvaluationFormType existing = formTypeRepository.findByFormTypeName(formTypeName).orElse(null);
+            if (existing != null && existing.getOriginalFilename() != null) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            }
+            PurchaseVendorEvaluationFormType saved;
+            if (existing != null) {
+                existing.attachFile(validatedFile.filename(), validatedFile.contentType(), userId);
+                saved = formTypeRepository.saveAndFlush(existing);
+            } else {
+                saved = formTypeRepository.saveAndFlush(PurchaseVendorEvaluationFormType.builder()
                     .formTypeName(formTypeName)
                     .originalFilename(validatedFile.filename())
                     .fileContentType(validatedFile.contentType())
                     .createdBy(userId)
-                    .build()));
+                    .build());
+            }
             formTypeFileRepository.save(PurchaseVendorEvaluationFormTypeFile.builder()
                 .purchaseVendorEvaluationFormTypeId(saved.getPurchaseVendorEvaluationFormTypeId())
                 .fileData(validatedFile.bytes())

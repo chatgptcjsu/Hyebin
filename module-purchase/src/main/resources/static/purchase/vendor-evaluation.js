@@ -115,7 +115,7 @@ async function loadEvaluators() {
 
 function renderFormTypes(preferredName = '') {
   const selectableTypes = formTypes.filter((item) => item.hasFile);
-  const options = '<option value="">첨부된 평가서 양식을 선택하세요</option>' + selectableTypes
+  const options = '<option value="">등록된 평가서 양식을 선택하세요</option>' + selectableTypes
     .map((formTypeOption) => `<option value="${escapeHtml(formTypeOption.formTypeName)}">${escapeHtml(formTypeOption.formTypeName)}</option>`)
     .join('');
   typeSelect.innerHTML = options;
@@ -127,12 +127,12 @@ function renderFormTypes(preferredName = '') {
   typeSelect.disabled = selectableTypes.length === 0;
   formType.disabled = selectableTypes.length === 0;
   updateSelectedFormTypeFile();
-  document.getElementById('registered-form-type-count').textContent = `${formTypes.length}개 등록`;
-  document.getElementById('registered-form-type-list').innerHTML = formTypes.length
-    ? formTypes.map((item) => `<span class="form-type-chip"><strong>${escapeHtml(item.formTypeName)}</strong>${item.hasFile && item.originalFilename && item.fileDownloadUrl
+  document.getElementById('registered-form-type-count').textContent = `${selectableTypes.length}개 등록`;
+  document.getElementById('registered-form-type-list').innerHTML = selectableTypes.length
+    ? selectableTypes.map((item) => `<span class="form-type-chip"><strong>${escapeHtml(item.formTypeName)}</strong>${item.originalFilename && item.fileDownloadUrl
       ? `<a href="${escapeHtml(item.fileDownloadUrl)}" class="form-type-file-link">${escapeHtml(item.originalFilename)} 다운로드</a>`
-      : '<span class="form-type-file-missing">파일 첨부 필요</span>'}</span>`).join('')
-    : '<span class="registry-empty">등록된 평가서 양식이 없습니다.</span>';
+      : ''}</span>`).join('')
+    : '<span class="registry-empty">등록한 평가서 양식이 없습니다.</span>';
 }
 
 function updateSelectedFormTypeFile() {
@@ -280,7 +280,7 @@ async function loadEvaluations() {
   listRoot.innerHTML = '<tr><td colspan="8" class="empty-state">평가 자료를 불러오는 중입니다.</td></tr>';
   updateSelectionUi();
   if (!typeSelect.value) {
-    listRoot.innerHTML = '<tr><td colspan="8" class="empty-state">평가서 양식을 먼저 등록해 주세요.</td></tr>';
+    listRoot.innerHTML = '<tr><td colspan="8" class="empty-state">평가서 양식 등록에서 이름과 파일을 등록해 주세요.</td></tr>';
     document.getElementById('evaluation-count').textContent = '0개 업체';
     updateSelectionUi();
     return;

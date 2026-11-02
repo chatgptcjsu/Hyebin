@@ -13,6 +13,8 @@ public interface PurchaseVendorEvaluationFormTypeRepository extends JpaRepositor
 
     Optional<PurchaseVendorEvaluationFormType> findByFormTypeNameAndDeletedYn(String formTypeName, String deletedYn);
 
+    Optional<PurchaseVendorEvaluationFormType> findByFormTypeName(String formTypeName);
+
     Optional<PurchaseVendorEvaluationFormType> findByPurchaseVendorEvaluationFormTypeIdAndDeletedYn(
         Long purchaseVendorEvaluationFormTypeId, String deletedYn);
 }

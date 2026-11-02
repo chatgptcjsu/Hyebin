@@ -226,9 +226,6 @@ CREATE TABLE IF NOT EXISTS purchase_vendor_evaluation_form_type_file (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
   COMMENT='협력업체 평가서 양식 원본 파일';
 
-INSERT IGNORE INTO purchase_vendor_evaluation_form_type (FORM_TYPE_NAME, DELETED_YN)
-VALUES ('기계설비공사', 'N'), ('유지보수', 'N'), ('저장/소모', 'N'), ('종이자원', 'N'), ('폐기물', 'N');
-
 UPDATE purchase_vendor_evaluation
 SET EVALUATION_TYPE = CASE EVALUATION_TYPE
     WHEN 'MECHANICAL' THEN '기계설비공사'

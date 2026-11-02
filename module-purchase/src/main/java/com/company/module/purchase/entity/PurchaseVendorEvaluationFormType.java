@@ -62,6 +62,9 @@ public class PurchaseVendorEvaluationFormType {
     public void attachFile(String originalFilename, String fileContentType, Long updatedBy) {
         this.originalFilename = originalFilename;
         this.fileContentType = fileContentType;
+        this.deletedYn = "N";
+        this.deletedAt = null;
+        this.deletedBy = null;
         this.updatedBy = updatedBy;
         this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
